@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1a1a18">
+
+  <title inertia>Shootout</title>
+  <link rel="icon" type="image/svg+xml" href="/shootout.svg">
+  <link rel="icon" type="image/png" href="/shootout.png">
+  <link rel="apple-touch-icon" href="/shootout.png">
+
+  @inertiaHead()
+  @viteReactRefresh()
+  @vite(['inertia/app/app.tsx', `inertia/pages/${page.component}.tsx`])
+</head>
+
+<body>
+  @inertia()
+</body>
+
+</html>

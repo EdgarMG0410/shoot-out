@@ -1,0 +1,95 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/*
+ | Shootout theme — OKLCH tokens, inspired by the marc-reports design system.
+ | graphite (dark ink + sidebar) · bone (light surfaces) · chalk (cards)
+ | slate (muted text) · lime (turf-green brand accent) · semantic status colors.
+ */
+@theme {
+  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-graphite: oklch(20% 0.01 250);
+  --color-graphite-2: oklch(26% 0.012 250);
+  --color-graphite-3: oklch(38% 0.012 250);
+
+  --color-bone-1: oklch(97% 0.004 250);
+  --color-bone-2: oklch(94% 0.006 250);
+  --color-bone-3: oklch(89% 0.007 250);
+  --color-chalk: oklch(99.3% 0.0015 250);
+
+  --color-slate-3: oklch(72% 0.01 250);
+  --color-slate-6: oklch(50% 0.013 250);
+
+  --color-lime-mark: oklch(86% 0.2 142);
+  --color-lime-deep: oklch(78% 0.19 142);
+  --color-emerald-mark: oklch(62% 0.15 158);
+  --color-amber-mark: oklch(80% 0.13 80);
+  --color-rose-mark: oklch(63% 0.2 18);
+
+  --radius: 0.5rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.625rem;
+  --radius-2xl: 0.75rem;
+  --radius-3xl: 0.875rem;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-bone-3);
+    box-sizing: border-box;
+  }
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background-color: var(--color-bone-1);
+    color: var(--color-graphite);
+    margin: 0;
+    min-height: 100vh;
+  }
+  *:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px oklch(86% 0.2 142 / 0.45);
+    border-radius: 6px;
+  }
+}
+
+@keyframes page-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.page-enter {
+  animation: page-fade-up 320ms cubic-bezier(0.25, 1, 0.5, 1) both;
+}
+
+@keyframes grow-up {
+  from {
+    transform: scaleY(0.04);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+.capsule-grow {
+  transform-origin: bottom center;
+  animation: grow-up 540ms cubic-bezier(0.25, 1, 0.5, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
