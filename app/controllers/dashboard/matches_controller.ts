@@ -7,12 +7,22 @@ import Space from '#models/space'
 import Match from '#models/match'
 import MatchEvent from '#models/match_event'
 import BookingService from '#services/booking_service'
-import { createMatchValidator, updateMatchValidator, createMatchEventValidator } from '#validators/match'
+import FixtureService from '#services/fixture_service'
+import {
+  createMatchValidator,
+  updateMatchValidator,
+  createMatchEventValidator,
+  generateFixturesValidator,
+} from '#validators/match'
 
 export default class DashboardMatchesController {
   /** Both team ids must belong to the given league. */
   private async teamsBelong(leagueId: number, ...ids: number[]) {
-    const count = await Team.query().where('league_id', leagueId).whereIn('id', ids).count('* as c').first()
+    const count = await Team.query()
+      .where('league_id', leagueId)
+      .whereIn('id', ids)
+      .count('* as c')
+      .first()
     return Number(count?.$extras.c ?? 0) === new Set(ids).size
   }
 
@@ -62,6 +72,55 @@ export default class DashboardMatchesController {
     return response.redirect().back()
   }
 
+  /**
+   * Auto-generate a single round-robin calendar for the league and schedule it
+   * across the chosen courts (one round per week). See FixtureService.
+   */
+  async generate({ params, request, response, session }: HttpContext) {
+    const league = await League.find(params.leagueId)
+    if (!league) {
+      session.flash('error', 'Liga no encontrada')
+      return response.redirect().toRoute('dashboard.leagues')
+    }
+
+    const data = await request.validateUsing(generateFixturesValidator)
+
+    const teamsCount = await Team.query().where('league_id', league.id).count('* as c').first()
+    if (Number(teamsCount?.$extras.c ?? 0) < 2) {
+      session.flash('error', 'Necesitas al menos 2 equipos para generar el calendario')
+      return response.redirect().back()
+    }
+
+    // Every court must belong to the league's location.
+    const validCourts = await Space.query()
+      .where('location_id', league.locationId)
+      .whereIn('id', data.spaceIds)
+      .count('* as c')
+      .first()
+    if (Number(validCourts?.$extras.c ?? 0) !== new Set(data.spaceIds).size) {
+      session.flash('error', 'Alguna cancha no pertenece a la locación de la liga')
+      return response.redirect().back()
+    }
+
+    const result = await new FixtureService().generate(league, {
+      spaceIds: data.spaceIds,
+      startDate: data.startDate,
+      firstTime: data.firstTime,
+      matchDuration: data.matchDuration,
+      gap: data.gap,
+      replace: data.replace ?? false,
+    })
+
+    const msg = `Calendario generado: ${result.created} partidos en ${result.rounds} jornadas${
+      result.skipped ? ` · ${result.skipped} sin horario libre` : ''
+    }`
+    session.flash(
+      result.created ? 'success' : 'error',
+      result.created ? msg : 'No se pudo generar el calendario'
+    )
+    return response.redirect().back()
+  }
+
   async update({ params, request, response, session }: HttpContext) {
     const match = await Match.find(params.id)
     if (!match) {
@@ -86,7 +145,10 @@ export default class DashboardMatchesController {
       return response.redirect().back()
     }
     // Only an active match occupies the court; skip the check when cancelling.
-    if (status !== 'cancelled' && (await svc.hasOverlap(spaceId, date, startTime, endTime, undefined, match.id))) {
+    if (
+      status !== 'cancelled' &&
+      (await svc.hasOverlap(spaceId, date, startTime, endTime, undefined, match.id))
+    ) {
       session.flash('error', 'La cancha ya está ocupada en ese horario')
       return response.redirect().back()
     }
@@ -125,7 +187,10 @@ export default class DashboardMatchesController {
       return response.redirect().back()
     }
     if (data.playerId) {
-      const player = await Player.query().where('id', data.playerId).where('team_id', data.teamId).first()
+      const player = await Player.query()
+        .where('id', data.playerId)
+        .where('team_id', data.teamId)
+        .first()
       if (!player) {
         session.flash('error', 'El jugador no pertenece a ese equipo')
         return response.redirect().back()

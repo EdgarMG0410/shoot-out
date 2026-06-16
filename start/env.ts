@@ -39,4 +39,17 @@ export default await Env.create(new URL('../', import.meta.url), {
   DB_USER: Env.schema.string.optional(),
   DB_PASSWORD: Env.schema.string.optional(),
   DB_DATABASE: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | Supabase Storage (image uploads)
+  |----------------------------------------------------------
+  | Uploads (logos, fotos) go to a PUBLIC Supabase Storage bucket. Optional so
+  | the app boots without them; uploads fail with a clear error until set.
+  | SUPABASE_URL e.g. https://<project-ref>.supabase.co
+  | SUPABASE_SERVICE_KEY = service_role key (server-side only, never exposed).
+  */
+  SUPABASE_URL: Env.schema.string.optional(),
+  SUPABASE_SERVICE_KEY: Env.schema.string.optional(),
+  SUPABASE_BUCKET: Env.schema.string.optional(),
 })

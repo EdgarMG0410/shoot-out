@@ -9,6 +9,9 @@
 @theme {
   --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Display/heading family. Drop Commuters Sans files via @font-face below to
+     activate it; until then it falls back to Geist gracefully. */
+  --font-display: 'Commuters Sans', 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
 
   --color-graphite: oklch(20% 0.01 250);
   --color-graphite-2: oklch(26% 0.012 250);
@@ -33,6 +36,36 @@
   --radius-xl: 0.625rem;
   --radius-2xl: 0.75rem;
   --radius-3xl: 0.875rem;
+}
+
+/*
+ | Commuters Sans (display headings). Add the licensed font files to
+ | inertia/fonts/ and uncomment — the family above will pick them up.
+ |
+ | @font-face {
+ |   font-family: 'Commuters Sans';
+ |   font-weight: 600;
+ |   font-style: normal;
+ |   font-display: swap;
+ |   src: url('../fonts/commuters-sans-semibold.woff2') format('woff2');
+ | }
+ */
+
+/* Page title — mobile spec from design: Commuters Sans 600, 20/20, -0.35px.
+   Scales up to 24px on >= sm to match the existing layout rhythm. */
+.title-page {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 20px;
+  letter-spacing: -0.35px;
+}
+@media (min-width: 640px) {
+  .title-page {
+    font-size: 1.5rem;
+    line-height: 2rem;
+    letter-spacing: -0.02em;
+  }
 }
 
 @layer base {

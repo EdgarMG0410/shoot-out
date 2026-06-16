@@ -12,6 +12,7 @@ type SharedProps = {
 const NAV = [
   { href: '/app', label: 'Explorar' },
   { href: '/app/bookings', label: 'Mis reservas' },
+  { href: '/ligas', label: 'Ligas' },
 ]
 
 export default function ClientLayout({
@@ -135,7 +136,7 @@ export default function ClientLayout({
       <main className="page-enter mx-auto max-w-5xl px-5 pb-16 pt-7 sm:px-8">
         {(title || subtitle) && (
           <div className="mb-6">
-            {title && <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>}
+            {title && <h1 className="title-page">{title}</h1>}
             {subtitle && <p className="mt-1 text-sm text-slate-6">{subtitle}</p>}
           </div>
         )}

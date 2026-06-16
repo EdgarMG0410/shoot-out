@@ -21,6 +21,7 @@ const LocationsController = () => import('#controllers/locations_controller')
 const EventsController = () => import('#controllers/events_controller')
 
 const SessionController = () => import('#controllers/session_controller')
+const PublicController = () => import('#controllers/public_controller')
 const ClientController = () => import('#controllers/client_controller')
 const DashboardController = () => import('#controllers/dashboard_controller')
 const DashboardSpacesController = () => import('#controllers/dashboard/spaces_controller')
@@ -31,6 +32,7 @@ const DashboardLeaguesController = () => import('#controllers/dashboard/leagues_
 const DashboardTeamsController = () => import('#controllers/dashboard/teams_controller')
 const DashboardPlayersController = () => import('#controllers/dashboard/players_controller')
 const DashboardMatchesController = () => import('#controllers/dashboard/matches_controller')
+const DashboardUploadsController = () => import('#controllers/dashboard/uploads_controller')
 
 /*
 |--------------------------------------------------------------------------
@@ -83,14 +85,23 @@ router
 
 /*
 |--------------------------------------------------------------------------
-| Web — root + session auth (shared by clients and admins)
+| Public website — no registration required
 |--------------------------------------------------------------------------
+| Anyone can browse canchas, terrazas and league stats. Renters identify with
+| just their email (passwordless) via POST /acceso.
 */
 
-router.get('/', ({ auth, response }) => {
-  if (!auth.isAuthenticated) return response.redirect().toPath('/auth/login')
-  return response.redirect().toPath(auth.user!.role === 'admin' ? '/dashboard' : '/app')
-})
+router.get('/', [PublicController, 'home']).as('public.home')
+router.get('/espacios/:id', [PublicController, 'space']).as('public.space')
+router.get('/ligas', [PublicController, 'leagues']).as('public.leagues')
+router.get('/ligas/:id', [PublicController, 'league']).as('public.league')
+router.post('/acceso', [SessionController, 'access']).as('access')
+
+/*
+|--------------------------------------------------------------------------
+| Web — auth pages (guest only)
+|--------------------------------------------------------------------------
+*/
 
 router
   .group(() => {
@@ -130,43 +141,110 @@ router
     router.get('/dashboard', [DashboardController, 'index']).as('dashboard')
 
     router.get('/dashboard/spaces', [DashboardSpacesController, 'index']).as('dashboard.spaces')
-    router.post('/dashboard/spaces', [DashboardSpacesController, 'store']).as('dashboard.spaces.store')
-    router.put('/dashboard/spaces/:id', [DashboardSpacesController, 'update']).as('dashboard.spaces.update')
-    router.delete('/dashboard/spaces/:id', [DashboardSpacesController, 'destroy']).as('dashboard.spaces.destroy')
-    router.post('/dashboard/spaces/:id/block', [DashboardSpacesController, 'block']).as('dashboard.spaces.block')
+    router
+      .post('/dashboard/spaces', [DashboardSpacesController, 'store'])
+      .as('dashboard.spaces.store')
+    router
+      .put('/dashboard/spaces/:id', [DashboardSpacesController, 'update'])
+      .as('dashboard.spaces.update')
+    router
+      .delete('/dashboard/spaces/:id', [DashboardSpacesController, 'destroy'])
+      .as('dashboard.spaces.destroy')
+    router
+      .post('/dashboard/spaces/:id/block', [DashboardSpacesController, 'block'])
+      .as('dashboard.spaces.block')
 
-    router.get('/dashboard/bookings', [DashboardBookingsController, 'index']).as('dashboard.bookings')
+    router
+      .get('/dashboard/bookings', [DashboardBookingsController, 'index'])
+      .as('dashboard.bookings')
 
-    router.get('/dashboard/locations', [DashboardLocationsController, 'index']).as('dashboard.locations')
-    router.get('/dashboard/locations/:id/edit', [DashboardLocationsController, 'edit']).as('dashboard.locations.edit')
-    router.post('/dashboard/locations', [DashboardLocationsController, 'store']).as('dashboard.locations.store')
-    router.put('/dashboard/locations/:id', [DashboardLocationsController, 'update']).as('dashboard.locations.update')
-    router.delete('/dashboard/locations/:id', [DashboardLocationsController, 'destroy']).as('dashboard.locations.destroy')
+    router
+      .get('/dashboard/locations', [DashboardLocationsController, 'index'])
+      .as('dashboard.locations')
+    router
+      .get('/dashboard/locations/:id/edit', [DashboardLocationsController, 'edit'])
+      .as('dashboard.locations.edit')
+    router
+      .post('/dashboard/locations', [DashboardLocationsController, 'store'])
+      .as('dashboard.locations.store')
+    router
+      .put('/dashboard/locations/:id', [DashboardLocationsController, 'update'])
+      .as('dashboard.locations.update')
+    router
+      .delete('/dashboard/locations/:id', [DashboardLocationsController, 'destroy'])
+      .as('dashboard.locations.destroy')
 
     router.get('/dashboard/events', [DashboardEventsController, 'index']).as('dashboard.events')
-    router.post('/dashboard/events', [DashboardEventsController, 'store']).as('dashboard.events.store')
-    router.put('/dashboard/events/:id', [DashboardEventsController, 'update']).as('dashboard.events.update')
-    router.delete('/dashboard/events/:id', [DashboardEventsController, 'destroy']).as('dashboard.events.destroy')
+    router
+      .post('/dashboard/events', [DashboardEventsController, 'store'])
+      .as('dashboard.events.store')
+    router
+      .put('/dashboard/events/:id', [DashboardEventsController, 'update'])
+      .as('dashboard.events.update')
+    router
+      .delete('/dashboard/events/:id', [DashboardEventsController, 'destroy'])
+      .as('dashboard.events.destroy')
+
+    // Image uploads (Supabase Storage)
+    router
+      .post('/dashboard/uploads', [DashboardUploadsController, 'store'])
+      .as('dashboard.uploads.store')
 
     // Ligas
     router.get('/dashboard/leagues', [DashboardLeaguesController, 'index']).as('dashboard.leagues')
-    router.post('/dashboard/leagues', [DashboardLeaguesController, 'store']).as('dashboard.leagues.store')
-    router.get('/dashboard/leagues/:id', [DashboardLeaguesController, 'show']).as('dashboard.leagues.show')
-    router.put('/dashboard/leagues/:id', [DashboardLeaguesController, 'update']).as('dashboard.leagues.update')
-    router.delete('/dashboard/leagues/:id', [DashboardLeaguesController, 'destroy']).as('dashboard.leagues.destroy')
+    router
+      .post('/dashboard/leagues', [DashboardLeaguesController, 'store'])
+      .as('dashboard.leagues.store')
+    router
+      .get('/dashboard/leagues/:id', [DashboardLeaguesController, 'show'])
+      .as('dashboard.leagues.show')
+    router
+      .put('/dashboard/leagues/:id', [DashboardLeaguesController, 'update'])
+      .as('dashboard.leagues.update')
+    router
+      .delete('/dashboard/leagues/:id', [DashboardLeaguesController, 'destroy'])
+      .as('dashboard.leagues.destroy')
 
-    router.post('/dashboard/leagues/:leagueId/teams', [DashboardTeamsController, 'store']).as('dashboard.teams.store')
-    router.put('/dashboard/teams/:id', [DashboardTeamsController, 'update']).as('dashboard.teams.update')
-    router.delete('/dashboard/teams/:id', [DashboardTeamsController, 'destroy']).as('dashboard.teams.destroy')
+    router
+      .post('/dashboard/leagues/:leagueId/teams', [DashboardTeamsController, 'store'])
+      .as('dashboard.teams.store')
+    router
+      .put('/dashboard/teams/:id', [DashboardTeamsController, 'update'])
+      .as('dashboard.teams.update')
+    router
+      .delete('/dashboard/teams/:id', [DashboardTeamsController, 'destroy'])
+      .as('dashboard.teams.destroy')
 
-    router.post('/dashboard/teams/:teamId/players', [DashboardPlayersController, 'store']).as('dashboard.players.store')
-    router.put('/dashboard/players/:id', [DashboardPlayersController, 'update']).as('dashboard.players.update')
-    router.delete('/dashboard/players/:id', [DashboardPlayersController, 'destroy']).as('dashboard.players.destroy')
+    router
+      .post('/dashboard/teams/:teamId/players', [DashboardPlayersController, 'store'])
+      .as('dashboard.players.store')
+    router
+      .put('/dashboard/players/:id', [DashboardPlayersController, 'update'])
+      .as('dashboard.players.update')
+    router
+      .delete('/dashboard/players/:id', [DashboardPlayersController, 'destroy'])
+      .as('dashboard.players.destroy')
 
-    router.post('/dashboard/leagues/:leagueId/matches', [DashboardMatchesController, 'store']).as('dashboard.matches.store')
-    router.put('/dashboard/matches/:id', [DashboardMatchesController, 'update']).as('dashboard.matches.update')
-    router.delete('/dashboard/matches/:id', [DashboardMatchesController, 'destroy']).as('dashboard.matches.destroy')
-    router.post('/dashboard/matches/:id/events', [DashboardMatchesController, 'addEvent']).as('dashboard.matches.events.store')
-    router.delete('/dashboard/match-events/:eventId', [DashboardMatchesController, 'removeEvent']).as('dashboard.matchevents.destroy')
+    router
+      .post('/dashboard/leagues/:leagueId/matches/generate', [
+        DashboardMatchesController,
+        'generate',
+      ])
+      .as('dashboard.matches.generate')
+    router
+      .post('/dashboard/leagues/:leagueId/matches', [DashboardMatchesController, 'store'])
+      .as('dashboard.matches.store')
+    router
+      .put('/dashboard/matches/:id', [DashboardMatchesController, 'update'])
+      .as('dashboard.matches.update')
+    router
+      .delete('/dashboard/matches/:id', [DashboardMatchesController, 'destroy'])
+      .as('dashboard.matches.destroy')
+    router
+      .post('/dashboard/matches/:id/events', [DashboardMatchesController, 'addEvent'])
+      .as('dashboard.matches.events.store')
+    router
+      .delete('/dashboard/match-events/:eventId', [DashboardMatchesController, 'removeEvent'])
+      .as('dashboard.matchevents.destroy')
   })
   .use([middleware.auth({ guards: ['web'] }), middleware.role({ role: 'admin' })])

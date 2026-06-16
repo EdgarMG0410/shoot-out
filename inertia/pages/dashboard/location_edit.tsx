@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { Head, Link, router, useForm } from '@inertiajs/react'
 import { ArrowLeft, Ban, Clock, Pencil, Plus, Trash2 } from 'lucide-react'
 import DashboardLayout from '~/layouts/dashboard'
-import { Button, Card, EmptyState, Field, Input, Photo, Select, StatusPill } from '~/components/ui'
+import { Button, Card, EmptyState, Field, Input, Select, StatusPill } from '~/components/ui'
+import { ImageUpload } from '~/components/image-upload'
 import { money } from '~/lib/format'
 import { BlockDialog, SpaceFormDialog, TYPE_LABEL, type SpaceRow } from '~/components/space-dialogs'
 
@@ -36,28 +37,47 @@ function LocationForm({ location }: { location: LocationData }) {
   return (
     <Card className="p-5 sm:p-6">
       <h2 className="text-base font-semibold text-graphite">Datos de la locación</h2>
-      <div className="mt-4 grid gap-5 lg:grid-cols-[200px_1fr]">
-        <Photo src={form.data.photoUrl} alt={location.name} className="aspect-video w-full rounded-xl lg:aspect-square" />
+      <div className="mt-4">
         <form onSubmit={submit} className="flex flex-col gap-4">
           <Field label="Nombre" error={form.errors.name}>
-            <Input value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} required />
+            <Input
+              value={form.data.name}
+              onChange={(e) => form.setData('name', e.target.value)}
+              required
+            />
           </Field>
           <Field label="Dirección" error={form.errors.address}>
-            <Input value={form.data.address} onChange={(e) => form.setData('address', e.target.value)} required />
+            <Input
+              value={form.data.address}
+              onChange={(e) => form.setData('address', e.target.value)}
+              required
+            />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Teléfono" error={form.errors.phone} hint="Opcional">
-              <Input value={form.data.phone} onChange={(e) => form.setData('phone', e.target.value)} placeholder="33 1111 2222" />
+              <Input
+                value={form.data.phone}
+                onChange={(e) => form.setData('phone', e.target.value)}
+                placeholder="33 1111 2222"
+              />
             </Field>
             <Field label="Estado" error={form.errors.status}>
-              <Select value={form.data.status} onChange={(e) => form.setData('status', e.target.value as LocationData['status'])}>
+              <Select
+                value={form.data.status}
+                onChange={(e) => form.setData('status', e.target.value as LocationData['status'])}
+              >
                 <option value="active">Activa</option>
                 <option value="inactive">Inactiva</option>
               </Select>
             </Field>
           </div>
-          <Field label="URL de foto" error={form.errors.photoUrl} hint="Opcional">
-            <Input type="url" value={form.data.photoUrl} onChange={(e) => form.setData('photoUrl', e.target.value)} placeholder="https://…" />
+          <Field label="Foto" error={form.errors.photoUrl} hint="Opcional">
+            <ImageUpload
+              value={form.data.photoUrl || null}
+              onChange={(url) => form.setData('photoUrl', url ?? '')}
+              folder="locations"
+              aspect="video"
+            />
           </Field>
           <div className="flex justify-end">
             <Button type="submit" variant="lime" disabled={form.processing}>
@@ -70,7 +90,13 @@ function LocationForm({ location }: { location: LocationData }) {
   )
 }
 
-export default function LocationEdit({ location, spaces }: { location: LocationData; spaces: SpaceRow[] }) {
+export default function LocationEdit({
+  location,
+  spaces,
+}: {
+  location: LocationData
+  spaces: SpaceRow[]
+}) {
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState<SpaceRow | null>(null)
   const [blocking, setBlocking] = useState<SpaceRow | null>(null)
@@ -87,7 +113,10 @@ export default function LocationEdit({ location, spaces }: { location: LocationD
     <>
       <Head title={`Editar · ${location.name}`} />
 
-      <Link href="/dashboard/locations" className="mb-4 inline-flex items-center gap-1 text-sm text-slate-6 hover:text-graphite">
+      <Link
+        href="/dashboard/locations"
+        className="mb-4 inline-flex items-center gap-1 text-sm text-slate-6 hover:text-graphite"
+      >
         <ArrowLeft className="size-4" /> Locaciones
       </Link>
 
@@ -103,7 +132,10 @@ export default function LocationEdit({ location, spaces }: { location: LocationD
           </div>
 
           {spaces.length === 0 ? (
-            <EmptyState title="Sin espacios" hint="Agrega una cancha, terraza u otro espacio a esta locación." />
+            <EmptyState
+              title="Sin espacios"
+              hint="Agrega una cancha, terraza u otro espacio a esta locación."
+            />
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               {spaces.map((s) => (
@@ -120,7 +152,9 @@ export default function LocationEdit({ location, spaces }: { location: LocationD
                     <StatusPill status={s.status} />
                   </div>
                   <p className="mt-2 flex items-center gap-3 text-sm text-slate-6">
-                    <span className="font-semibold tabular-nums text-graphite">{money(s.pricePerHour)}</span>
+                    <span className="font-semibold tabular-nums text-graphite">
+                      {money(s.pricePerHour)}
+                    </span>
                     <span className="inline-flex items-center gap-1">
                       <Clock className="size-3.5" /> {hhmm(s.openTime)}–{hhmm(s.closeTime)}
                     </span>
@@ -132,7 +166,13 @@ export default function LocationEdit({ location, spaces }: { location: LocationD
                     <Button variant="ghost" size="sm" onClick={() => setBlocking(s)}>
                       <Ban className="size-3.5" /> Bloquear
                     </Button>
-                    <Button variant="danger" size="icon" onClick={() => removeSpace(s)} aria-label="Eliminar" className="ml-auto">
+                    <Button
+                      variant="danger"
+                      size="icon"
+                      onClick={() => removeSpace(s)}
+                      aria-label="Eliminar"
+                      className="ml-auto"
+                    >
                       <Trash2 className="size-4" />
                     </Button>
                   </div>

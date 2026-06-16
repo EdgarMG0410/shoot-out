@@ -36,3 +36,14 @@ export const createMatchEventValidator = vine.compile(
     minute: vine.number().min(0).max(200).nullable().optional(),
   })
 )
+
+export const generateFixturesValidator = vine.compile(
+  vine.object({
+    spaceIds: vine.array(vine.number().positive()).minLength(1),
+    startDate: vine.string().trim().regex(DATE_RE),
+    firstTime: vine.string().trim().regex(TIME_RE),
+    matchDuration: vine.number().min(15).max(240),
+    gap: vine.number().min(0).max(240),
+    replace: vine.boolean().optional(),
+  })
+)

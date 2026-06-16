@@ -21,3 +21,11 @@ export const loginValidator = vine.compile(
     password: vine.string(),
   })
 )
+
+/** Renter passwordless access — identified only by email. */
+export const accessValidator = vine.compile(
+  vine.object({
+    email: vine.string().trim().email().maxLength(254),
+    fullName: vine.string().trim().minLength(2).maxLength(120).nullable().optional(),
+  })
+)

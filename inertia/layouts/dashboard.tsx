@@ -181,9 +181,7 @@ export default function DashboardLayout({
               <Menu className="size-5" />
             </button>
             <div className="min-w-0 flex-1">
-              <h1 className="truncate text-xl font-semibold tracking-tight text-graphite sm:text-2xl">
-                {title}
-              </h1>
+              <h1 className="title-page truncate text-graphite">{title}</h1>
               {subtitle && <p className="mt-0.5 truncate text-sm text-slate-6">{subtitle}</p>}
             </div>
             {actions && <div className="flex items-center gap-2">{actions}</div>}
