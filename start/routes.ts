@@ -22,6 +22,7 @@ const EventsController = () => import('#controllers/events_controller')
 
 const SessionController = () => import('#controllers/session_controller')
 const PublicController = () => import('#controllers/public_controller')
+const CommunityController = () => import('#controllers/community_controller')
 const ClientController = () => import('#controllers/client_controller')
 const DashboardController = () => import('#controllers/dashboard_controller')
 const DashboardSpacesController = () => import('#controllers/dashboard/spaces_controller')
@@ -96,6 +97,20 @@ router.get('/espacios/:id', [PublicController, 'space']).as('public.space')
 router.get('/ligas', [PublicController, 'leagues']).as('public.leagues')
 router.get('/ligas/:id', [PublicController, 'league']).as('public.league')
 router.post('/acceso', [SessionController, 'access']).as('access')
+router.post('/interesados', [PublicController, 'lead']).as('lead')
+
+// Comunidad futbolera — public, email-only
+router.get('/comunidad', [CommunityController, 'index']).as('community')
+router.post('/comunidad/partidos', [CommunityController, 'storeMatch']).as('community.match.store')
+router
+  .post('/comunidad/partidos/:id/unirse', [CommunityController, 'joinMatch'])
+  .as('community.match.join')
+router
+  .post('/comunidad/jugadores', [CommunityController, 'storePlayer'])
+  .as('community.player.store')
+router
+  .post('/comunidad/equipos', [CommunityController, 'storeRecruitment'])
+  .as('community.recruitment.store')
 
 /*
 |--------------------------------------------------------------------------

@@ -13,6 +13,7 @@ const NAV = [
   { href: '/app', label: 'Explorar' },
   { href: '/app/bookings', label: 'Mis reservas' },
   { href: '/ligas', label: 'Ligas' },
+  { href: '/comunidad', label: 'Comunidad' },
 ]
 
 export default function ClientLayout({
@@ -41,7 +42,7 @@ export default function ClientLayout({
 
       <header className="sticky top-0 z-30 border-b border-bone-3 bg-bone-1/85 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center gap-5 px-5 py-3 sm:px-8">
-          <Link href="/app" className="shrink-0" aria-label="Shootout — inicio">
+          <Link href="/app" className="shrink-0" aria-label="Futhub — inicio">
             <Logo />
           </Link>
 
@@ -53,7 +54,9 @@ export default function ClientLayout({
                 href={n.href}
                 className={cn(
                   'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
-                  isActive(n.href) ? 'bg-graphite text-chalk' : 'text-slate-6 hover:bg-bone-2 hover:text-graphite'
+                  isActive(n.href)
+                    ? 'bg-graphite text-chalk'
+                    : 'text-slate-6 hover:bg-bone-2 hover:text-graphite'
                 )}
               >
                 {n.label}
@@ -62,7 +65,9 @@ export default function ClientLayout({
           </nav>
 
           <div className="ml-auto flex items-center gap-3">
-            <span className="hidden text-sm text-slate-6 sm:block">{user?.fullName ?? user?.email}</span>
+            <span className="hidden text-sm text-slate-6 sm:block">
+              {user?.fullName ?? user?.email}
+            </span>
             {isAdmin && (
               <Link
                 href="/dashboard"
@@ -94,7 +99,10 @@ export default function ClientLayout({
         {/* Mobile dropdown */}
         {menuOpen && (
           <>
-            <div className="fixed inset-0 top-[57px] z-20 bg-graphite/20 sm:hidden" onClick={() => setMenuOpen(false)} />
+            <div
+              className="fixed inset-0 top-[57px] z-20 bg-graphite/20 sm:hidden"
+              onClick={() => setMenuOpen(false)}
+            />
             <nav className="page-enter relative z-30 border-t border-bone-3 bg-bone-1 px-5 py-3 sm:hidden">
               <div className="flex flex-col gap-1">
                 {NAV.map((n) => (
@@ -103,7 +111,9 @@ export default function ClientLayout({
                     href={n.href}
                     className={cn(
                       'rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-                      isActive(n.href) ? 'bg-graphite text-chalk' : 'text-slate-6 hover:bg-bone-2 hover:text-graphite'
+                      isActive(n.href)
+                        ? 'bg-graphite text-chalk'
+                        : 'text-slate-6 hover:bg-bone-2 hover:text-graphite'
                     )}
                   >
                     {n.label}
@@ -119,7 +129,9 @@ export default function ClientLayout({
                 )}
               </div>
               <div className="mt-3 flex items-center justify-between border-t border-bone-3 pt-3">
-                <span className="truncate text-sm text-slate-6">{user?.fullName ?? user?.email}</span>
+                <span className="truncate text-sm text-slate-6">
+                  {user?.fullName ?? user?.email}
+                </span>
                 <button
                   type="button"
                   onClick={() => router.post('/auth/logout')}

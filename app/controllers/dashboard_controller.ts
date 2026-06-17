@@ -1,10 +1,13 @@
+import { DateTime } from 'luxon'
 import type { HttpContext } from '@adonisjs/core/http'
 import Space from '#models/space'
 import Booking from '#models/booking'
 import Payment from '#models/payment'
 import User from '#models/user'
+import BookingService from '#services/booking_service'
 
 const count = (row: { $extras: { c?: string | number } } | null) => Number(row?.$extras.c ?? 0)
+const REPORT_DAYS = 7
 
 export default class DashboardController {
   async index({ inertia }: HttpContext) {
@@ -23,6 +26,46 @@ export default class DashboardController {
       .preload('user')
       .orderBy('created_at', 'desc')
       .limit(8)
+
+    // ---- Ocupación simple (próximos 7 días) ----
+    const svc = new BookingService()
+    const start = DateTime.now().startOf('day')
+    const end = start.plus({ days: REPORT_DAYS - 1 })
+    const startISO = start.toISODate()!
+    const endISO = end.toISODate()!
+
+    const activeSpacesList = await Space.query()
+      .where('status', 'active')
+      .preload('location')
+      .orderBy('name')
+
+    const rangeBookings = await Booking.query()
+      .whereIn('status', ['pending', 'confirmed'])
+      .whereBetween('date', [startISO, endISO])
+
+    const bookedBySpace = new Map<number, number>()
+    for (const b of rangeBookings) {
+      const hrs = svc.durationHours(b.startTime, b.endTime)
+      bookedBySpace.set(b.spaceId, (bookedBySpace.get(b.spaceId) ?? 0) + hrs)
+    }
+
+    const reportSpaces = activeSpacesList.map((s) => {
+      const dailyHours = Math.max(0, svc.durationHours(s.openTime, s.closeTime))
+      const availableHours = dailyHours * REPORT_DAYS
+      const bookedHours = bookedBySpace.get(s.id) ?? 0
+      const occupancy = availableHours > 0 ? Math.min(1, bookedHours / availableHours) : 0
+      return {
+        id: s.id,
+        name: s.name,
+        locationName: s.location?.name ?? '—',
+        bookedHours: Number(bookedHours.toFixed(1)),
+        availableHours: Number(availableHours.toFixed(1)),
+        occupancy: Number((occupancy * 100).toFixed(0)),
+      }
+    })
+
+    const totalAvailable = reportSpaces.reduce((a, s) => a + s.availableHours, 0)
+    const totalBooked = reportSpaces.reduce((a, s) => a + s.bookedHours, 0)
 
     return inertia.render('dashboard/index', {
       stats: {
@@ -43,6 +86,17 @@ export default class DashboardController {
         status: b.status,
         totalPrice: b.totalPrice,
       })),
+      report: {
+        days: REPORT_DAYS,
+        rangeStart: startISO,
+        rangeEnd: endISO,
+        bookingsCount: rangeBookings.length,
+        bookedHours: Number(totalBooked.toFixed(1)),
+        availableHours: Number(totalAvailable.toFixed(1)),
+        occupancy:
+          totalAvailable > 0 ? Number(((totalBooked / totalAvailable) * 100).toFixed(0)) : 0,
+        spaces: reportSpaces,
+      },
     })
   }
 }

@@ -17,6 +17,10 @@ export default class Location extends BaseModel {
   @column()
   declare address: string
 
+  /** Neighborhood/municipio used to filter canchas by area. */
+  @column()
+  declare zona: string | null
+
   @column()
   declare phone: string | null
 

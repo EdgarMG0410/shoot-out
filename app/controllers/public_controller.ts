@@ -3,8 +3,10 @@ import type { HttpContext } from '@adonisjs/core/http'
 import Location from '#models/location'
 import Space from '#models/space'
 import League from '#models/league'
+import Lead from '#models/lead'
 import BookingService from '#services/booking_service'
 import StandingsService from '#services/standings_service'
+import { createLeadValidator } from '#validators/lead'
 
 /**
  * Public website (no auth). Anyone can browse canchas/terrazas and league
@@ -25,6 +27,7 @@ export default class PublicController {
         id: l.id,
         name: l.name,
         address: l.address,
+        zona: l.zona,
         phone: l.phone,
         photoUrl: l.photoUrl,
         spaces: l.spaces.map((s) => ({
@@ -149,5 +152,18 @@ export default class PublicController {
       scorers,
       cards,
     })
+  }
+
+  /** Landing lead capture — interested player or court owner. */
+  async lead({ request, response, session }: HttpContext) {
+    const data = await request.validateUsing(createLeadValidator)
+    await Lead.create(data)
+    session.flash(
+      'success',
+      data.type === 'cancha'
+        ? '¡Gracias! Te contactaremos para registrar tu cancha en Futhub.'
+        : '¡Gracias! Te avisaremos en cuanto haya canchas disponibles cerca de ti.'
+    )
+    return response.redirect().back()
   }
 }

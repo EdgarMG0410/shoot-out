@@ -10,6 +10,7 @@ type SharedUser = { id: number; fullName: string | null; email: string; role: st
 const NAV = [
   { href: '/', label: 'Inicio' },
   { href: '/ligas', label: 'Ligas' },
+  { href: '/comunidad', label: 'Comunidad' },
 ]
 
 /** Passwordless access — renter enters just their email. */
@@ -79,7 +80,7 @@ export default function PublicLayout({
 
       <header className="sticky top-0 z-30 border-b border-bone-3 bg-bone-1/85 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center gap-5 px-5 py-3 sm:px-8">
-          <Link href="/" className="shrink-0" aria-label="Shootout — inicio">
+          <Link href="/" className="shrink-0" aria-label="Futhub — inicio">
             <Logo />
           </Link>
 
