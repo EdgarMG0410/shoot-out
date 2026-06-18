@@ -29,3 +29,11 @@ services:
       # dashboard (Settings ▸ Database ▸ Connection string ▸ Session pooler).
       - key: DATABASE_URL
         sync: false
+      # Supabase Storage (image uploads). URL + bucket are public; the
+      # service_role key is secret — paste it in the Render dashboard.
+      - key: SUPABASE_URL
+        value: https://bzdwqjdgcyvyvwwnksje.supabase.co
+      - key: SUPABASE_BUCKET
+        value: uploads
+      - key: SUPABASE_SERVICE_KEY
+        sync: false

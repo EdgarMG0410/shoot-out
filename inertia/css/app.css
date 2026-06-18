@@ -2,9 +2,14 @@
 @import 'tw-animate-css';
 
 /*
- | Shootout theme — OKLCH tokens, inspired by the marc-reports design system.
+ | Futhub theme — OKLCH tokens, monochrome brand (matches the FH mark).
  | graphite (dark ink + sidebar) · bone (light surfaces) · chalk (cards)
- | slate (muted text) · lime (turf-green brand accent) · semantic status colors.
+ | slate (muted text) · neutral grays for accents · semantic status colors kept
+ | in hue (emerald/amber/rose) so success/warning/error still read at a glance.
+ |
+ | NOTE: the *-mark / electric / flame tokens below are intentionally desaturated
+ | (chroma 0) at their original lightness — every existing `bg-lime-mark` etc.
+ | becomes neutral gray with its contrast relationships preserved 1:1.
  */
 @theme {
   --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
@@ -25,16 +30,18 @@
   --color-slate-3: oklch(72% 0.01 250);
   --color-slate-6: oklch(50% 0.013 250);
 
-  --color-lime-mark: oklch(86% 0.2 142);
-  --color-lime-deep: oklch(78% 0.19 142);
+  /* Brand accent — desaturated to neutral gray (was turf-green). */
+  --color-lime-mark: oklch(86% 0 0);
+  --color-lime-deep: oklch(78% 0 0);
+  /* Semantic status — kept in hue on purpose (success / warning / error). */
   --color-emerald-mark: oklch(62% 0.15 158);
   --color-amber-mark: oklch(80% 0.13 80);
   --color-rose-mark: oklch(63% 0.2 18);
 
-  /* Vibrant secondary accents for the sporty refresh (use sparingly). */
-  --color-electric: oklch(72% 0.16 232);
-  --color-electric-deep: oklch(63% 0.16 248);
-  --color-flame: oklch(70% 0.19 40);
+  /* Secondary accents — also neutralized to grays for the monochrome brand. */
+  --color-electric: oklch(72% 0 0);
+  --color-electric-deep: oklch(63% 0 0);
+  --color-flame: oklch(70% 0 0);
 
   --radius: 0.5rem;
   --radius-lg: 0.5rem;
@@ -91,7 +98,7 @@
   }
   *:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px oklch(86% 0.2 142 / 0.45);
+    box-shadow: 0 0 0 3px oklch(55% 0 0 / 0.4);
     border-radius: 6px;
   }
 }
@@ -112,9 +119,9 @@
 .hero-scrim {
   background-image: linear-gradient(
     100deg,
-    oklch(18% 0.02 250 / 0.94) 0%,
-    oklch(18% 0.02 250 / 0.78) 42%,
-    oklch(20% 0.06 240 / 0.45) 100%
+    oklch(18% 0 0 / 0.94) 0%,
+    oklch(18% 0 0 / 0.78) 42%,
+    oklch(22% 0 0 / 0.45) 100%
   );
 }
 

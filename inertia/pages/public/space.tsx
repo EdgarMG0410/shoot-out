@@ -6,6 +6,7 @@ import { Button, Card, Photo } from '~/components/ui'
 import { cn } from '~/lib/utils'
 import { money } from '~/lib/format'
 import { buildSlots, type Range } from '~/lib/slots'
+import { spaceImage } from '~/lib/stock'
 
 type Space = {
   id: number
@@ -74,7 +75,7 @@ export default function PublicSpace({
       <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">
         <div>
           <Photo
-            src={space.photoUrl}
+            src={spaceImage(space)}
             alt={space.name}
             className="aspect-video w-full rounded-3xl"
           />

@@ -14,6 +14,7 @@ import PublicLayout from '~/layouts/public'
 import { Button, Card, Field, Input, Photo, Select, Textarea } from '~/components/ui'
 import { cn } from '~/lib/utils'
 import { money } from '~/lib/format'
+import { spaceImage } from '~/lib/stock'
 
 const HERO_IMG =
   'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1600&q=70&auto=format&fit=crop'
@@ -106,29 +107,32 @@ function SpaceCard({ space }: { space: Space }) {
   return (
     <Link href={`/espacios/${space.id}`} className="group block">
       <Photo
-        src={space.photoUrl}
+        src={spaceImage(space)}
         alt={space.name}
         className="aspect-4/3 w-full rounded-2xl shadow-sm ring-1 ring-bone-3 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:shadow-md"
         overlay={
-          <span
-            className={cn(
-              'absolute left-3 top-3 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold shadow-sm',
-              TYPE_BADGE[space.type] ?? 'bg-chalk text-graphite'
-            )}
-          >
-            {TYPE_LABEL[space.type]}
-            {space.type === 'cancha' && space.size ? ` ${space.size}` : ''}
-          </span>
+          <>
+            <span
+              className={cn(
+                'absolute left-3 top-3 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold shadow-sm',
+                TYPE_BADGE[space.type] ?? 'bg-chalk text-graphite'
+              )}
+            >
+              {TYPE_LABEL[space.type]}
+              {space.type === 'cancha' && space.size ? ` ${space.size}` : ''}
+            </span>
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-linear-to-t from-graphite/70 to-transparent" />
+            <span className="absolute bottom-3 right-3 rounded-full bg-chalk/95 px-2.5 py-1 text-xs font-bold text-graphite shadow-sm backdrop-blur">
+              {money(space.pricePerHour)}
+              <span className="font-medium text-slate-6"> /h</span>
+            </span>
+          </>
         }
       />
       <div className="mt-2.5">
         <p className="truncate font-semibold text-graphite">{space.name}</p>
         <p className="mt-0.5 flex items-center gap-1 text-sm text-slate-6">
           <Clock className="size-3.5 shrink-0" /> {hhmm(space.openTime)}–{hhmm(space.closeTime)}
-        </p>
-        <p className="mt-1 text-sm text-graphite">
-          <span className="font-bold text-lime-deep">{money(space.pricePerHour)}</span>
-          <span className="text-slate-6"> MXN / hora</span>
         </p>
       </div>
     </Link>

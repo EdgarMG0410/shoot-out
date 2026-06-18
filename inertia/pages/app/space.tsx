@@ -5,6 +5,7 @@ import ClientLayout from '~/layouts/client'
 import { Button, Card, Field, Photo, Select } from '~/components/ui'
 import { money, timeRange } from '~/lib/format'
 import { buildSlots, endOptions, startOptions } from '~/lib/slots'
+import { spaceImage } from '~/lib/stock'
 
 type Occupied = {
   bookings: { id: number; startTime: string; endTime: string }[]
@@ -101,7 +102,7 @@ export default function SpacePage({ space, date, occupied }: { space: Space; dat
       {/* Hero */}
       <Card className="mb-5 overflow-hidden sm:mb-6">
         <Photo
-          src={space.photoUrl}
+          src={spaceImage(space)}
           alt={space.name}
           className="h-44 w-full sm:h-64"
           overlay={

@@ -5,6 +5,7 @@ import ClientLayout from '~/layouts/client'
 import { Photo } from '~/components/ui'
 import { cn } from '~/lib/utils'
 import { money } from '~/lib/format'
+import { spaceImage } from '~/lib/stock'
 
 type Space = {
   id: number
@@ -57,7 +58,7 @@ function SpaceCard({ space, fav, onFav }: { space: Space; fav: boolean; onFav: (
     <Link href={`/app/spaces/${space.id}`} className="group block">
       <div className="relative">
         <Photo
-          src={space.photoUrl}
+          src={spaceImage(space)}
           alt={space.name}
           className="aspect-square w-full rounded-2xl"
           overlay={
