@@ -220,95 +220,43 @@ export default class extends BaseSeeder {
       }
     }
 
-    // ---- Demo league (only if none exist) ----
-    const leagueCount = await League.query().count('* as c').first()
-    if (Number(leagueCount?.$extras.c ?? 0) === 0) {
-      const canchaCentro = await Space.findBy('name', 'Cancha Centro')
-
-      const league = await League.create({
-        locationId: centro.id,
-        name: 'Liga Amateur GDL',
-        description: 'Torneo de fútbol 5 entre equipos locales.',
-        seasonStart: DateTime.now().startOf('month'),
-        seasonEnd: DateTime.now().plus({ months: 3 }),
-        status: 'active',
-      })
-
-      const roster: Record<string, string[]> = {
+    // ---- Demo leagues (idempotent per name) ----
+    await this.seedLeague({
+      locationId: centro.id,
+      spaceName: 'Cancha Centro',
+      name: 'Liga Amateur GDL',
+      description: 'Torneo de fútbol 5 entre equipos locales.',
+      roster: {
         'Halcones': ['Luis Soto', 'Marco Díaz', 'Iván Ruiz', 'Pepe López'],
         'Pumas': ['Carlos Vega', 'Toño Mora', 'Beto Cruz', 'Saúl Lara'],
         'Real Centro': ['Memo Ríos', 'Hugo Paz', 'Nico Bravo', 'Rafa Gil'],
         'Tiburones': ['Edu Mata', 'Aldo Vera', 'Checo Luna', 'Pol Reyes'],
-      }
-      const teams: Record<string, Team> = {}
-      const firstPlayer: Record<string, Player> = {}
-      for (const [name, players] of Object.entries(roster)) {
-        const team = await Team.create({ leagueId: league.id, name })
-        teams[name] = team
-        let n = 1
-        for (const p of players) {
-          const player = await Player.create({ teamId: team.id, name: p, number: n })
-          if (n === 1) firstPlayer[name] = player
-          n++
-        }
-      }
-
-      if (canchaCentro) {
-        // Played match with a recorded minuta (drives the standings/scorers).
-        const m1 = await Match.create({
-          leagueId: league.id,
-          spaceId: canchaCentro.id,
-          homeTeamId: teams['Halcones'].id,
-          awayTeamId: teams['Pumas'].id,
-          date: DateTime.now().plus({ days: 7 }),
-          startTime: '10:00',
-          endTime: '11:00',
-          status: 'played',
-        })
-        await MatchEvent.createMany([
-          {
-            matchId: m1.id,
-            teamId: teams['Halcones'].id,
-            playerId: firstPlayer['Halcones'].id,
-            type: 'goal',
-            minute: 12,
-          },
-          {
-            matchId: m1.id,
-            teamId: teams['Halcones'].id,
-            playerId: firstPlayer['Halcones'].id,
-            type: 'goal',
-            minute: 34,
-          },
-          {
-            matchId: m1.id,
-            teamId: teams['Pumas'].id,
-            playerId: firstPlayer['Pumas'].id,
-            type: 'goal',
-            minute: 50,
-          },
-          {
-            matchId: m1.id,
-            teamId: teams['Pumas'].id,
-            playerId: firstPlayer['Pumas'].id,
-            type: 'yellow',
-            minute: 60,
-          },
-        ])
-
-        // Upcoming scheduled match — blocks the court right after.
-        await Match.create({
-          leagueId: league.id,
-          spaceId: canchaCentro.id,
-          homeTeamId: teams['Real Centro'].id,
-          awayTeamId: teams['Tiburones'].id,
-          date: DateTime.now().plus({ days: 7 }),
-          startTime: '11:00',
-          endTime: '12:00',
-          status: 'scheduled',
-        })
-      }
-    }
+      },
+    })
+    await this.seedLeague({
+      locationId: norte.id,
+      spaceName: 'Cancha Norte',
+      name: 'Copa Zapopan 7v7',
+      description: 'Copa de fútbol 7 en la sucursal Norte.',
+      roster: {
+        'Cóndores': ['Diego Salas', 'Iker Mena', 'Bruno Tovar', 'Lalo Vega'],
+        'Atlético Patria': ['Raúl Cano', 'Beto Nava', 'Toño Lira', 'Chuy Mora'],
+        'Lobos': ['Emi Ponce', 'Gael Ríos', 'Dani Quezada', 'Pau Serna'],
+        'Venados': ['Cris Olvera', 'Beto Fierro', 'Nacho Lomelí', 'Óscar Vidal'],
+      },
+    })
+    await this.seedLeague({
+      locationId: sur.id,
+      spaceName: 'Cancha Sur 7',
+      name: 'Liga Sur Dominical',
+      description: 'Liga dominical de fútbol 7 en Tlaquepaque.',
+      roster: {
+        'Deportivo Sur': ['Memo Aceves', 'Tavo Real', 'Pepe Mora', 'Lalo Cisneros'],
+        'Tlaquepaque FC': ['Beto Sandoval', 'Iván Robles', 'Chava Ulloa', 'Pol Méndez'],
+        'Guerreros': ['Caleb Ortiz', 'Dani Farías', 'Mau Rentería', 'Aldo Bernal'],
+        'Cañeros': ['Hugo Plascencia', 'Saúl Zepeda', 'Rafa Becerra', 'Nico Aguirre'],
+      },
+    })
 
     // ---- Comunidad demo (only if none exist) ----
     const openMatchCount = await OpenMatch.query().count('* as c').first()
@@ -382,6 +330,106 @@ export default class extends BaseSeeder {
           status: 'open',
         },
       ])
+    }
+  }
+
+  /**
+   * Seed one demo league with 4 teams, rosters, one played match (with a minuta
+   * that drives standings/scorers) and one scheduled match. Idempotent: matches
+   * the league by name and skips if its teams already exist.
+   */
+  private async seedLeague(args: {
+    locationId: number
+    spaceName: string
+    name: string
+    description: string
+    roster: Record<string, string[]>
+  }) {
+    const existing = await League.findBy('name', args.name)
+    const league =
+      existing ??
+      (await League.create({
+        locationId: args.locationId,
+        name: args.name,
+        description: args.description,
+        seasonStart: DateTime.now().startOf('month'),
+        seasonEnd: DateTime.now().plus({ months: 3 }),
+        status: 'active',
+      }))
+
+    // Already populated → idempotent no-op.
+    const teamCount = await Team.query().where('league_id', league.id).count('* as c').first()
+    if (Number(teamCount?.$extras.c ?? 0) > 0) return
+
+    const space = await Space.findBy('name', args.spaceName)
+
+    const teams: Team[] = []
+    const firstPlayer: Record<number, Player> = {}
+    for (const [name, players] of Object.entries(args.roster)) {
+      const team = await Team.create({ leagueId: league.id, name })
+      teams.push(team)
+      let n = 1
+      for (const p of players) {
+        const player = await Player.create({ teamId: team.id, name: p, number: n })
+        if (n === 1) firstPlayer[team.id] = player
+        n++
+      }
+    }
+
+    if (space && teams.length >= 4) {
+      // Round 1, match A — played with a recorded minuta (2-1).
+      const m1 = await Match.create({
+        leagueId: league.id,
+        spaceId: space.id,
+        homeTeamId: teams[0].id,
+        awayTeamId: teams[1].id,
+        date: DateTime.now().plus({ days: 7 }),
+        startTime: '10:00',
+        endTime: '11:00',
+        status: 'played',
+      })
+      await MatchEvent.createMany([
+        {
+          matchId: m1.id,
+          teamId: teams[0].id,
+          playerId: firstPlayer[teams[0].id].id,
+          type: 'goal',
+          minute: 12,
+        },
+        {
+          matchId: m1.id,
+          teamId: teams[0].id,
+          playerId: firstPlayer[teams[0].id].id,
+          type: 'goal',
+          minute: 34,
+        },
+        {
+          matchId: m1.id,
+          teamId: teams[1].id,
+          playerId: firstPlayer[teams[1].id].id,
+          type: 'goal',
+          minute: 50,
+        },
+        {
+          matchId: m1.id,
+          teamId: teams[1].id,
+          playerId: firstPlayer[teams[1].id].id,
+          type: 'yellow',
+          minute: 60,
+        },
+      ])
+
+      // Round 1, match B — scheduled (blocks the court right after).
+      await Match.create({
+        leagueId: league.id,
+        spaceId: space.id,
+        homeTeamId: teams[2].id,
+        awayTeamId: teams[3].id,
+        date: DateTime.now().plus({ days: 7 }),
+        startTime: '11:00',
+        endTime: '12:00',
+        status: 'scheduled',
+      })
     }
   }
 }

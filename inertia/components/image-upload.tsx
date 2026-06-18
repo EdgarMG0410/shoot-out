@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { ImagePlus, Loader2, Trash2 } from 'lucide-react'
+import { ImagePlus, Link2, Loader2, Trash2 } from 'lucide-react'
 import { Photo } from '~/components/ui'
 import { cn } from '~/lib/utils'
 
@@ -35,8 +35,23 @@ export function ImageUpload({
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showUrl, setShowUrl] = useState(false)
+  const [urlDraft, setUrlDraft] = useState('')
 
   const pick = () => inputRef.current?.click()
+
+  const useUrl = () => {
+    const url = urlDraft.trim()
+    if (!url) return
+    if (!/^https?:\/\/.+/i.test(url)) {
+      setError('Pega una URL válida que empiece con http(s)://')
+      return
+    }
+    setError(null)
+    onChange(url)
+    setUrlDraft('')
+    setShowUrl(false)
+  }
 
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -89,6 +104,16 @@ export function ImageUpload({
             )}
             {uploading ? 'Subiendo…' : value ? 'Cambiar imagen' : 'Subir imagen'}
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              setShowUrl((v) => !v)
+              setError(null)
+            }}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-6 transition-colors hover:text-graphite"
+          >
+            <Link2 className="size-3.5" /> Usar una URL
+          </button>
           {value && !uploading && (
             <button
               type="button"
@@ -101,8 +126,34 @@ export function ImageUpload({
           <span className="text-[11px] text-slate-6/80">JPG, PNG, WEBP · máx 5 MB</span>
         </div>
       </div>
+
+      {showUrl && (
+        <div className="flex gap-2">
+          <input
+            type="url"
+            value={urlDraft}
+            onChange={(e) => setUrlDraft(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), useUrl())}
+            placeholder="https://…/foto.jpg"
+            className="h-9 w-full rounded-lg border border-bone-3 bg-bone-1 px-3 text-sm text-graphite placeholder:text-slate-6/60 focus-visible:border-lime-deep"
+            autoFocus
+          />
+          <button
+            type="button"
+            onClick={useUrl}
+            className="shrink-0 rounded-lg bg-graphite px-3 text-sm font-medium text-chalk transition-colors hover:bg-graphite-2"
+          >
+            Usar
+          </button>
+        </div>
+      )}
+
       <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
-      {error && <span className="text-[11px] font-medium text-rose-mark">{error}</span>}
+      {error && (
+        <div className="flex items-start gap-1.5 rounded-lg border border-rose-mark/30 bg-rose-mark/10 px-3 py-2 text-xs font-medium text-rose-mark">
+          <span>{error}</span>
+        </div>
+      )}
     </div>
   )
 }

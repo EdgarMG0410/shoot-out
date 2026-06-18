@@ -22,7 +22,17 @@ export default class PublicController {
 
     const leagues = await League.query().preload('location').withCount('teams').orderBy('name')
 
+    const canchasCount = locations.reduce(
+      (sum, l) => sum + l.spaces.filter((s) => s.type === 'cancha').length,
+      0
+    )
+
     return inertia.render('public/home', {
+      stats: {
+        sucursales: locations.length,
+        canchas: canchasCount,
+        ligas: leagues.length,
+      },
       locations: locations.map((l) => ({
         id: l.id,
         name: l.name,

@@ -31,11 +31,16 @@
   --color-amber-mark: oklch(80% 0.13 80);
   --color-rose-mark: oklch(63% 0.2 18);
 
+  /* Vibrant secondary accents for the sporty refresh (use sparingly). */
+  --color-electric: oklch(72% 0.16 232);
+  --color-electric-deep: oklch(63% 0.16 248);
+  --color-flame: oklch(70% 0.19 40);
+
   --radius: 0.5rem;
   --radius-lg: 0.5rem;
-  --radius-xl: 0.625rem;
-  --radius-2xl: 0.75rem;
-  --radius-3xl: 0.875rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.375rem;
 }
 
 /*
@@ -89,6 +94,33 @@
     box-shadow: 0 0 0 3px oklch(86% 0.2 142 / 0.45);
     border-radius: 6px;
   }
+}
+
+/* Sporty brand helpers ---------------------------------------------------- */
+
+/* Energetic turf gradient for hero backplates and accent fills. */
+.brand-gradient {
+  background-image: linear-gradient(
+    115deg,
+    var(--color-graphite) 0%,
+    var(--color-graphite-2) 45%,
+    color-mix(in oklch, var(--color-electric-deep) 55%, var(--color-graphite-2)) 100%
+  );
+}
+
+/* Dark scrim so white text stays legible over a photo. */
+.hero-scrim {
+  background-image: linear-gradient(
+    100deg,
+    oklch(18% 0.02 250 / 0.94) 0%,
+    oklch(18% 0.02 250 / 0.78) 42%,
+    oklch(20% 0.06 240 / 0.45) 100%
+  );
+}
+
+/* Lime → emerald sheen for primary CTAs / highlights. */
+.lime-sheen {
+  background-image: linear-gradient(135deg, var(--color-lime-mark) 0%, var(--color-lime-deep) 100%);
 }
 
 @keyframes page-fade-up {

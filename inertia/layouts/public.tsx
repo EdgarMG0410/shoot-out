@@ -61,10 +61,13 @@ export function AccessDialog({ onClose }: { onClose: () => void }) {
 export default function PublicLayout({
   title,
   subtitle,
+  bleed = false,
   children,
 }: {
   title?: ReactNode
   subtitle?: ReactNode
+  /** Full-width pages (e.g. the landing) manage their own section widths. */
+  bleed?: boolean
   children: ReactNode
 }) {
   const page = usePage<{ user: SharedUser }>()
@@ -79,7 +82,7 @@ export default function PublicLayout({
       <FlashToasts />
 
       <header className="sticky top-0 z-30 border-b border-bone-3 bg-bone-1/85 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center gap-5 px-5 py-3 sm:px-8">
+        <div className="mx-auto flex max-w-7xl items-center gap-5 px-5 py-3 sm:px-8">
           <Link href="/" className="shrink-0" aria-label="Futhub — inicio">
             <Logo />
           </Link>
@@ -129,15 +132,19 @@ export default function PublicLayout({
         </div>
       </header>
 
-      <main className="page-enter mx-auto max-w-5xl px-5 pb-16 pt-7 sm:px-8">
-        {(title || subtitle) && (
-          <div className="mb-6">
-            {title && <h1 className="title-page">{title}</h1>}
-            {subtitle && <p className="mt-1 text-sm text-slate-6">{subtitle}</p>}
-          </div>
-        )}
-        {children}
-      </main>
+      {bleed ? (
+        <main className="page-enter">{children}</main>
+      ) : (
+        <main className="page-enter mx-auto max-w-5xl px-5 pb-16 pt-7 sm:px-8">
+          {(title || subtitle) && (
+            <div className="mb-6">
+              {title && <h1 className="title-page">{title}</h1>}
+              {subtitle && <p className="mt-1 text-sm text-slate-6">{subtitle}</p>}
+            </div>
+          )}
+          {children}
+        </main>
+      )}
 
       {access && <AccessDialog onClose={() => setAccess(false)} />}
     </div>
