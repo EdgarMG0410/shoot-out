@@ -43,7 +43,12 @@ export default function Login() {
                   required
                 />
               </Field>
-              <Button type="submit" variant="lime" className="mt-1 w-full" disabled={form.processing}>
+              <Button
+                type="submit"
+                variant="lime"
+                className="mt-1 w-full"
+                disabled={form.processing}
+              >
                 {form.processing ? 'Entrando…' : 'Entrar'}
               </Button>
             </form>

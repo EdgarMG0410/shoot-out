@@ -29,9 +29,8 @@ function LocationForm({ location }: { location: LocationData }) {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
-    form
-      .transform((d) => ({ ...d, phone: d.phone || null, photoUrl: d.photoUrl || null }))
-      .put(`/dashboard/locations/${location.id}`, { preserveScroll: true })
+    form.transform((d) => ({ ...d, phone: d.phone || null, photoUrl: d.photoUrl || null }))
+    form.put(`/dashboard/locations/${location.id}`, { preserveScroll: true })
   }
 
   return (

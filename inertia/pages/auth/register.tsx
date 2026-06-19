@@ -63,7 +63,12 @@ export default function Register() {
                   <option value="otro">Otro</option>
                 </Select>
               </Field>
-              <Button type="submit" variant="lime" className="mt-1 w-full" disabled={form.processing}>
+              <Button
+                type="submit"
+                variant="lime"
+                className="mt-1 w-full"
+                disabled={form.processing}
+              >
                 {form.processing ? 'Creando…' : 'Crear cuenta'}
               </Button>
             </form>

@@ -170,9 +170,8 @@ function LeadForm({ initialType }: { initialType: 'jugador' | 'cancha' }) {
   const form = useForm({ name: '', email: '', phone: '', type: initialType, message: '' })
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
-    form
-      .transform((d) => ({ ...d, phone: d.phone || null, message: d.message || null }))
-      .post('/interesados', { preserveScroll: true, onSuccess: () => form.reset() })
+    form.transform((d) => ({ ...d, phone: d.phone || null, message: d.message || null }))
+    form.post('/interesados', { preserveScroll: true, onSuccess: () => form.reset() })
   }
 
   return (

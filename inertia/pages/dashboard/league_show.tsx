@@ -89,15 +89,14 @@ function LeagueEditDialog({ league, onClose }: { league: League; onClose: () => 
   })
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
-    form
-      .transform((d) => ({
-        name: d.name,
-        description: d.description || null,
-        seasonStart: d.seasonStart || null,
-        seasonEnd: d.seasonEnd || null,
-        status: d.status,
-      }))
-      .put(`/dashboard/leagues/${league.id}`, { onSuccess: onClose, preserveScroll: true })
+    form.transform((d) => ({
+      name: d.name,
+      description: d.description || null,
+      seasonStart: d.seasonStart || null,
+      seasonEnd: d.seasonEnd || null,
+      status: d.status,
+    }))
+    form.put(`/dashboard/leagues/${league.id}`, { onSuccess: onClose, preserveScroll: true })
   }
   return (
     <Dialog open onClose={onClose} title="Editar liga">
@@ -212,12 +211,11 @@ function TeamCard({ team, onEdit }: { team: Team; onEdit: () => void }) {
   const form = useForm({ name: '', number: '' })
   const addPlayer = (e: React.FormEvent) => {
     e.preventDefault()
-    form
-      .transform((d) => ({ name: d.name, number: d.number ? Number(d.number) : null }))
-      .post(`/dashboard/teams/${team.id}/players`, {
-        preserveScroll: true,
-        onSuccess: () => form.reset('name', 'number'),
-      })
+    form.transform((d) => ({ name: d.name, number: d.number ? Number(d.number) : null }))
+    form.post(`/dashboard/teams/${team.id}/players`, {
+      preserveScroll: true,
+      onSuccess: () => form.reset('name', 'number'),
+    })
   }
   const removePlayer = (id: number) =>
     router.delete(`/dashboard/players/${id}`, { preserveScroll: true })
@@ -475,19 +473,18 @@ function GenerateFixturesDialog({
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
-    form
-      .transform((d) => ({
-        spaceIds: d.spaceIds,
-        startDate: d.startDate,
-        firstTime: d.firstTime,
-        matchDuration: Number(d.matchDuration),
-        gap: Number(d.gap),
-        replace: d.replace,
-      }))
-      .post(`/dashboard/leagues/${leagueId}/matches/generate`, {
-        onSuccess: onClose,
-        preserveScroll: true,
-      })
+    form.transform((d) => ({
+      spaceIds: d.spaceIds,
+      startDate: d.startDate,
+      firstTime: d.firstTime,
+      matchDuration: Number(d.matchDuration),
+      gap: Number(d.gap),
+      replace: d.replace,
+    }))
+    form.post(`/dashboard/leagues/${leagueId}/matches/generate`, {
+      onSuccess: onClose,
+      preserveScroll: true,
+    })
   }
 
   return (
@@ -614,17 +611,16 @@ function MinutaDialog({
 
   const add = (e: React.FormEvent) => {
     e.preventDefault()
-    form
-      .transform((d) => ({
-        teamId: Number(d.teamId),
-        playerId: d.playerId ? Number(d.playerId) : null,
-        type: d.type,
-        minute: d.minute ? Number(d.minute) : null,
-      }))
-      .post(`/dashboard/matches/${match.id}/events`, {
-        preserveScroll: true,
-        onSuccess: () => form.reset('playerId', 'minute'),
-      })
+    form.transform((d) => ({
+      teamId: Number(d.teamId),
+      playerId: d.playerId ? Number(d.playerId) : null,
+      type: d.type,
+      minute: d.minute ? Number(d.minute) : null,
+    }))
+    form.post(`/dashboard/matches/${match.id}/events`, {
+      preserveScroll: true,
+      onSuccess: () => form.reset('playerId', 'minute'),
+    })
   }
   const removeEvent = (id: number) =>
     router.delete(`/dashboard/match-events/${id}`, { preserveScroll: true })

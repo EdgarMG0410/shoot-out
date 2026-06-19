@@ -117,9 +117,8 @@ function JoinDialog({ match, onClose }: { match: MatchRow; onClose: () => void }
   const form = useForm({ name: '', email: '', position: '' })
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
-    form
-      .transform((d) => ({ ...d, position: d.position || null }))
-      .post(`/comunidad/partidos/${match.id}/unirse`, { onSuccess: onClose })
+    form.transform((d) => ({ ...d, position: d.position || null }))
+    form.post(`/comunidad/partidos/${match.id}/unirse`, { onSuccess: onClose })
   }
   return (
     <Dialog open onClose={onClose} title="Quiero jugar" description={match.title}>
@@ -178,16 +177,15 @@ function NewMatchDialog({ locations, onClose }: { locations: LocationOpt[]; onCl
   })
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
-    form
-      .transform((d) => ({
-        ...d,
-        locationId: d.locationId ? Number(d.locationId) : null,
-        zona: d.zona || null,
-        endTime: d.endTime || null,
-        notes: d.notes || null,
-        spotsTotal: Number(d.spotsTotal),
-      }))
-      .post('/comunidad/partidos', { onSuccess: onClose })
+    form.transform((d) => ({
+      ...d,
+      locationId: d.locationId ? Number(d.locationId) : null,
+      zona: d.zona || null,
+      endTime: d.endTime || null,
+      notes: d.notes || null,
+      spotsTotal: Number(d.spotsTotal),
+    }))
+    form.post('/comunidad/partidos', { onSuccess: onClose })
   }
   return (
     <Dialog
@@ -321,14 +319,13 @@ function NewPlayerDialog({ onClose }: { onClose: () => void }) {
   })
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
-    form
-      .transform((d) => ({
-        ...d,
-        position: d.position || null,
-        zona: d.zona || null,
-        phone: d.phone || null,
-      }))
-      .post('/comunidad/jugadores', { onSuccess: onClose })
+    form.transform((d) => ({
+      ...d,
+      position: d.position || null,
+      zona: d.zona || null,
+      phone: d.phone || null,
+    }))
+    form.post('/comunidad/jugadores', { onSuccess: onClose })
   }
   return (
     <Dialog
@@ -429,14 +426,13 @@ function NewRecruitmentDialog({ onClose }: { onClose: () => void }) {
   })
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
-    form
-      .transform((d) => ({
-        ...d,
-        zona: d.zona || null,
-        positionsNeeded: d.positionsNeeded || null,
-        notes: d.notes || null,
-      }))
-      .post('/comunidad/equipos', { onSuccess: onClose })
+    form.transform((d) => ({
+      ...d,
+      zona: d.zona || null,
+      positionsNeeded: d.positionsNeeded || null,
+      notes: d.notes || null,
+    }))
+    form.post('/comunidad/equipos', { onSuccess: onClose })
   }
   return (
     <Dialog

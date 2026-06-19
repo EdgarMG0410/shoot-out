@@ -25,13 +25,7 @@ const FILTERS = [
   { key: 'cancelled', label: 'Canceladas' },
 ]
 
-export default function Bookings({
-  bookings,
-  filter,
-}: {
-  bookings: BookingRow[]
-  filter: string
-}) {
+export default function Bookings({ bookings, filter }: { bookings: BookingRow[]; filter: string }) {
   return (
     <>
       <Head title="Reservas" />
@@ -39,7 +33,8 @@ export default function Bookings({
         <div className="flex flex-wrap gap-1.5">
           {FILTERS.map((f) => {
             const active = filter === f.key
-            const href = f.key === 'all' ? '/dashboard/bookings' : `/dashboard/bookings?status=${f.key}`
+            const href =
+              f.key === 'all' ? '/dashboard/bookings' : `/dashboard/bookings?status=${f.key}`
             return (
               <Link
                 key={f.key}

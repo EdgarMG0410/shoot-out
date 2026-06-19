@@ -17,7 +17,14 @@ type Space = {
   openTime: string
   closeTime: string
 }
-type Loc = { id: number; name: string; address: string; phone: string | null; photoUrl: string | null; spaces: Space[] }
+type Loc = {
+  id: number
+  name: string
+  address: string
+  phone: string | null
+  photoUrl: string | null
+  spaces: Space[]
+}
 
 const TYPE_LABEL: Record<string, string> = { cancha: 'Cancha', terraza: 'Terraza', otro: 'Otro' }
 const hhmm = (t: string) => (t ?? '').slice(0, 5)
@@ -53,7 +60,15 @@ function useFavorites() {
   return { favs, toggle }
 }
 
-function SpaceCard({ space, fav, onFav }: { space: Space; fav: boolean; onFav: (id: number) => void }) {
+function SpaceCard({
+  space,
+  fav,
+  onFav,
+}: {
+  space: Space
+  fav: boolean
+  onFav: (id: number) => void
+}) {
   return (
     <Link href={`/app/spaces/${space.id}`} className="group block">
       <div className="relative">
@@ -77,7 +92,12 @@ function SpaceCard({ space, fav, onFav }: { space: Space; fav: boolean; onFav: (
                 }}
                 className="absolute right-3 top-3 grid size-8 place-items-center rounded-full text-chalk transition-transform active:scale-90"
               >
-                <Heart className={cn('size-6 drop-shadow', fav ? 'fill-rose-mark text-rose-mark' : 'fill-graphite/30 text-chalk')} />
+                <Heart
+                  className={cn(
+                    'size-6 drop-shadow',
+                    fav ? 'fill-rose-mark text-rose-mark' : 'fill-graphite/30 text-chalk'
+                  )}
+                />
               </button>
             </>
           }

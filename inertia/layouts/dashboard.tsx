@@ -41,7 +41,8 @@ function NavLinks({ url, onNavigate }: { url: string; onNavigate?: () => void })
   return (
     <nav className="flex flex-1 flex-col gap-1">
       {NAV.map((item) => {
-        const active = url === item.href || (item.href !== '/dashboard' && url.startsWith(item.href))
+        const active =
+          url === item.href || (item.href !== '/dashboard' && url.startsWith(item.href))
         const Icon = item.icon
         return (
           <Link
@@ -70,7 +71,15 @@ function NavLinks({ url, onNavigate }: { url: string; onNavigate?: () => void })
   )
 }
 
-function SidebarBody({ user, url, onNavigate }: { user: SharedUser; url: string; onNavigate?: () => void }) {
+function SidebarBody({
+  user,
+  url,
+  onNavigate,
+}: {
+  user: SharedUser
+  url: string
+  onNavigate?: () => void
+}) {
   return (
     <div className="flex h-full flex-col gap-6 p-4">
       <Link href="/dashboard" onClick={onNavigate} className="flex items-center px-2 pt-2">
@@ -156,7 +165,9 @@ export default function DashboardLayout({
           </div>
         </header>
 
-        <main className="page-enter flex-1 px-5 pb-16 pt-6 sm:px-8 lg:px-10 lg:pt-8">{children}</main>
+        <main className="page-enter flex-1 px-5 pb-16 pt-6 sm:px-8 lg:px-10 lg:pt-8">
+          {children}
+        </main>
       </div>
     </div>
   )

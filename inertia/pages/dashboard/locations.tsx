@@ -4,7 +4,13 @@ import { MapPin, Pencil, Phone, Plus, Trash2 } from 'lucide-react'
 import DashboardLayout from '~/layouts/dashboard'
 import { Button, Card, Dialog, EmptyState, Field, Input, Select, StatusPill } from '~/components/ui'
 
-type SpaceRef = { id: number; name: string; type: 'cancha' | 'terraza' | 'otro'; size: string | null; status: string }
+type SpaceRef = {
+  id: number
+  name: string
+  type: 'cancha' | 'terraza' | 'otro'
+  size: string | null
+  status: string
+}
 type LocationRow = {
   id: number
   name: string
@@ -16,7 +22,13 @@ type LocationRow = {
 
 const TYPE_LABEL: Record<string, string> = { cancha: 'Cancha', terraza: 'Terraza', otro: 'Otro' }
 
-function LocationDialog({ location, onClose }: { location: LocationRow | 'new'; onClose: () => void }) {
+function LocationDialog({
+  location,
+  onClose,
+}: {
+  location: LocationRow | 'new'
+  onClose: () => void
+}) {
   const isEdit = location !== 'new'
   const form = useForm({
     name: isEdit ? location.name : '',
@@ -34,25 +46,46 @@ function LocationDialog({ location, onClose }: { location: LocationRow | 'new'; 
     <Dialog open onClose={onClose} title={isEdit ? 'Editar locación' : 'Nueva locación'}>
       <form onSubmit={submit} className="flex flex-col gap-4">
         <Field label="Nombre" error={form.errors.name}>
-          <Input value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} placeholder="Shootout Centro" required />
+          <Input
+            value={form.data.name}
+            onChange={(e) => form.setData('name', e.target.value)}
+            placeholder="Shootout Centro"
+            required
+          />
         </Field>
         <Field label="Dirección" error={form.errors.address}>
-          <Input value={form.data.address} onChange={(e) => form.setData('address', e.target.value)} placeholder="Av. Chapultepec 100" required />
+          <Input
+            value={form.data.address}
+            onChange={(e) => form.setData('address', e.target.value)}
+            placeholder="Av. Chapultepec 100"
+            required
+          />
         </Field>
         <Field label="Teléfono" error={form.errors.phone} hint="Opcional">
-          <Input value={form.data.phone} onChange={(e) => form.setData('phone', e.target.value)} placeholder="33 1111 2222" />
+          <Input
+            value={form.data.phone}
+            onChange={(e) => form.setData('phone', e.target.value)}
+            placeholder="33 1111 2222"
+          />
         </Field>
         {isEdit && (
           <Field label="Estado" error={form.errors.status}>
-            <Select value={form.data.status} onChange={(e) => form.setData('status', e.target.value as LocationRow['status'])}>
+            <Select
+              value={form.data.status}
+              onChange={(e) => form.setData('status', e.target.value as LocationRow['status'])}
+            >
               <option value="active">Activa</option>
               <option value="inactive">Inactiva</option>
             </Select>
           </Field>
         )}
         <div className="mt-1 flex justify-end gap-2">
-          <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
-          <Button type="submit" variant="lime" disabled={form.processing}>{isEdit ? 'Guardar' : 'Crear'}</Button>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" variant="lime" disabled={form.processing}>
+            {isEdit ? 'Guardar' : 'Crear'}
+          </Button>
         </div>
       </form>
     </Dialog>
@@ -72,14 +105,20 @@ export default function Locations({ locations }: { locations: LocationRow[] }) {
     <>
       <Head title="Locaciones" />
       <div className="mb-5 flex justify-end">
-        <Button variant="lime" onClick={() => setDialog('new')}><Plus /> Nueva locación</Button>
+        <Button variant="lime" onClick={() => setDialog('new')}>
+          <Plus /> Nueva locación
+        </Button>
       </div>
 
       {locations.length === 0 ? (
         <EmptyState
           title="Aún no hay locaciones"
           hint="Crea una sede para agrupar sus espacios."
-          action={<Button variant="lime" onClick={() => setDialog('new')}><Plus /> Nueva locación</Button>}
+          action={
+            <Button variant="lime" onClick={() => setDialog('new')}>
+              <Plus /> Nueva locación
+            </Button>
+          }
         />
       ) : (
         <div className="space-y-4">
@@ -91,8 +130,14 @@ export default function Locations({ locations }: { locations: LocationRow[] }) {
                   <StatusPill status={loc.status} />
                 </div>
                 <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-sm text-slate-6">
-                  <span className="inline-flex items-center gap-1"><MapPin className="size-3.5" /> {loc.address}</span>
-                  {loc.phone && <span className="inline-flex items-center gap-1"><Phone className="size-3.5" /> {loc.phone}</span>}
+                  <span className="inline-flex items-center gap-1">
+                    <MapPin className="size-3.5" /> {loc.address}
+                  </span>
+                  {loc.phone && (
+                    <span className="inline-flex items-center gap-1">
+                      <Phone className="size-3.5" /> {loc.phone}
+                    </span>
+                  )}
                 </p>
               </div>
 
@@ -101,9 +146,15 @@ export default function Locations({ locations }: { locations: LocationRow[] }) {
                   <span className="text-sm text-slate-6">Sin espacios</span>
                 ) : (
                   loc.spaces.map((s) => (
-                    <span key={s.id} className="inline-flex items-center gap-1 rounded-md bg-bone-2 px-2 py-1 text-xs text-graphite">
+                    <span
+                      key={s.id}
+                      className="inline-flex items-center gap-1 rounded-md bg-bone-2 px-2 py-1 text-xs text-graphite"
+                    >
                       {s.name}
-                      <span className="text-slate-6">· {TYPE_LABEL[s.type]}{s.type === 'cancha' && s.size ? ` ${s.size}` : ''}</span>
+                      <span className="text-slate-6">
+                        · {TYPE_LABEL[s.type]}
+                        {s.type === 'cancha' && s.size ? ` ${s.size}` : ''}
+                      </span>
                     </span>
                   ))
                 )}
@@ -115,7 +166,12 @@ export default function Locations({ locations }: { locations: LocationRow[] }) {
                     <Pencil className="size-3.5" /> Editar
                   </Button>
                 </Link>
-                <Button variant="danger" size="icon" onClick={() => remove(loc)} aria-label="Eliminar">
+                <Button
+                  variant="danger"
+                  size="icon"
+                  onClick={() => remove(loc)}
+                  aria-label="Eliminar"
+                >
                   <Trash2 className="size-4" />
                 </Button>
               </div>
@@ -124,7 +180,13 @@ export default function Locations({ locations }: { locations: LocationRow[] }) {
         </div>
       )}
 
-      {dialog && <LocationDialog key={dialog === 'new' ? 'new' : dialog.id} location={dialog} onClose={() => setDialog(null)} />}
+      {dialog && (
+        <LocationDialog
+          key={dialog === 'new' ? 'new' : dialog.id}
+          location={dialog}
+          onClose={() => setDialog(null)}
+        />
+      )}
     </>
   )
 }

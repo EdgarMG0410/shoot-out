@@ -4,9 +4,21 @@ import { Ban, MapPin, Pencil, Plus, Trash2 } from 'lucide-react'
 import DashboardLayout from '~/layouts/dashboard'
 import { Button, Card, EmptyState, StatusPill } from '~/components/ui'
 import { money } from '~/lib/format'
-import { BlockDialog, SpaceFormDialog, TYPE_LABEL, type LocationOpt, type SpaceRow } from '~/components/space-dialogs'
+import {
+  BlockDialog,
+  SpaceFormDialog,
+  TYPE_LABEL,
+  type LocationOpt,
+  type SpaceRow,
+} from '~/components/space-dialogs'
 
-export default function Spaces({ spaces, locations }: { spaces: SpaceRow[]; locations: LocationOpt[] }) {
+export default function Spaces({
+  spaces,
+  locations,
+}: {
+  spaces: SpaceRow[]
+  locations: LocationOpt[]
+}) {
   const [createOpen, setCreateOpen] = useState(false)
   const [editing, setEditing] = useState<SpaceRow | null>(null)
   const [blocking, setBlocking] = useState<SpaceRow | null>(null)
@@ -30,7 +42,11 @@ export default function Spaces({ spaces, locations }: { spaces: SpaceRow[]; loca
         <EmptyState
           title="Aún no hay espacios"
           hint="Agrega una cancha, terraza u otro espacio para empezar a rentar."
-          action={<Button variant="lime" onClick={() => setCreateOpen(true)}><Plus /> Nuevo espacio</Button>}
+          action={
+            <Button variant="lime" onClick={() => setCreateOpen(true)}>
+              <Plus /> Nuevo espacio
+            </Button>
+          }
         />
       ) : (
         <Card className="overflow-hidden">
@@ -52,21 +68,40 @@ export default function Spaces({ spaces, locations }: { spaces: SpaceRow[]; loca
                   <tr key={s.id} className="border-b border-bone-2 last:border-0">
                     <td className="px-5 py-3.5 font-medium text-graphite">{s.name}</td>
                     <td className="px-5 py-3.5">
-                      <span className="inline-flex items-center gap-1 text-slate-6"><MapPin className="size-3" /> {s.locationName}</span>
+                      <span className="inline-flex items-center gap-1 text-slate-6">
+                        <MapPin className="size-3" /> {s.locationName}
+                      </span>
                     </td>
                     <td className="px-5 py-3.5 text-slate-6">
                       {TYPE_LABEL[s.type]}
                       {s.type === 'cancha' && s.size ? ` ${s.size}` : ''}
                       {s.type !== 'cancha' && s.capacity ? ` · ${s.capacity} pers.` : ''}
                     </td>
-                    <td className="px-5 py-3.5 text-right font-medium tabular-nums text-graphite">{money(s.pricePerHour)}</td>
-                    <td className="px-5 py-3.5"><StatusPill status={s.status} /></td>
-                    <td className="px-5 py-3.5 text-right tabular-nums text-slate-6">{s.bookingsCount}</td>
+                    <td className="px-5 py-3.5 text-right font-medium tabular-nums text-graphite">
+                      {money(s.pricePerHour)}
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <StatusPill status={s.status} />
+                    </td>
+                    <td className="px-5 py-3.5 text-right tabular-nums text-slate-6">
+                      {s.bookingsCount}
+                    </td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center justify-end gap-1.5">
-                        <Button variant="secondary" size="sm" onClick={() => setEditing(s)}><Pencil className="size-3.5" /> Editar</Button>
-                        <Button variant="ghost" size="sm" onClick={() => setBlocking(s)}><Ban className="size-3.5" /> Bloquear</Button>
-                        <Button variant="danger" size="icon" onClick={() => remove(s)} aria-label="Eliminar"><Trash2 className="size-4" /></Button>
+                        <Button variant="secondary" size="sm" onClick={() => setEditing(s)}>
+                          <Pencil className="size-3.5" /> Editar
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setBlocking(s)}>
+                          <Ban className="size-3.5" /> Bloquear
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="icon"
+                          onClick={() => remove(s)}
+                          aria-label="Eliminar"
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -94,14 +129,21 @@ export default function Spaces({ spaces, locations }: { spaces: SpaceRow[]; loca
 }
 
 Spaces.layout = (page: React.ReactNode) => (
-  <DashboardLayout title="Espacios" subtitle="Canchas, terrazas y más — precios y disponibilidad" actions={<NewSpaceButton />}>
+  <DashboardLayout
+    title="Espacios"
+    subtitle="Canchas, terrazas y más — precios y disponibilidad"
+    actions={<NewSpaceButton />}
+  >
     {page}
   </DashboardLayout>
 )
 
 function NewSpaceButton() {
   return (
-    <Button variant="lime" onClick={() => window.dispatchEvent(new CustomEvent('shootout:new-space'))}>
+    <Button
+      variant="lime"
+      onClick={() => window.dispatchEvent(new CustomEvent('shootout:new-space'))}
+    >
       <Plus /> Nuevo espacio
     </Button>
   )

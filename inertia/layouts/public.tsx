@@ -18,7 +18,8 @@ export function AccessDialog({ onClose }: { onClose: () => void }) {
   const form = useForm({ email: '', fullName: '' })
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
-    form.transform((d) => ({ email: d.email, fullName: d.fullName || null })).post('/acceso')
+    form.transform((d) => ({ email: d.email, fullName: d.fullName || null }))
+    form.post('/acceso')
   }
   return (
     <Dialog

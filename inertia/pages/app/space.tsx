@@ -35,7 +35,15 @@ const toMin = (t: string) => {
   return Number(h) * 60 + Number(m)
 }
 
-export default function SpacePage({ space, date, occupied }: { space: Space; date: string; occupied: Occupied }) {
+export default function SpacePage({
+  space,
+  date,
+  occupied,
+}: {
+  space: Space
+  date: string
+  occupied: Occupied
+}) {
   const form = useForm({ spaceId: space.id, date, startTime: '', endTime: '' })
 
   // Discrete free/occupied grid within the space's business hours.
@@ -50,7 +58,10 @@ export default function SpacePage({ space, date, occupied }: { space: Space; dat
     [space.openTime, space.closeTime, occupied]
   )
   const starts = useMemo(() => startOptions(slots), [slots])
-  const ends = useMemo(() => (form.data.startTime ? endOptions(slots, form.data.startTime) : []), [slots, form.data.startTime])
+  const ends = useMemo(
+    () => (form.data.startTime ? endOptions(slots, form.data.startTime) : []),
+    [slots, form.data.startTime]
+  )
 
   // Reset the picked range whenever the day changes (slots differ per date).
   useEffect(() => {
@@ -71,13 +82,30 @@ export default function SpacePage({ space, date, occupied }: { space: Space; dat
   }
 
   const occupiedSlots = [
-    ...occupied.events.map((e) => ({ tone: 'event' as const, label: e.name, range: timeRange(e.startTime, e.endTime) })),
-    ...occupied.matches.map((m) => ({ tone: 'match' as const, label: m.name, range: timeRange(m.startTime, m.endTime) })),
-    ...occupied.bookings.map((b) => ({ tone: 'booking' as const, label: 'Reservada', range: timeRange(b.startTime, b.endTime) })),
-    ...occupied.blocks.map((b) => ({ tone: 'block' as const, label: b.reason ?? 'Bloqueada', range: timeRange(b.startTime, b.endTime) })),
+    ...occupied.events.map((e) => ({
+      tone: 'event' as const,
+      label: e.name,
+      range: timeRange(e.startTime, e.endTime),
+    })),
+    ...occupied.matches.map((m) => ({
+      tone: 'match' as const,
+      label: m.name,
+      range: timeRange(m.startTime, m.endTime),
+    })),
+    ...occupied.bookings.map((b) => ({
+      tone: 'booking' as const,
+      label: 'Reservada',
+      range: timeRange(b.startTime, b.endTime),
+    })),
+    ...occupied.blocks.map((b) => ({
+      tone: 'block' as const,
+      label: b.reason ?? 'Bloqueada',
+      range: timeRange(b.startTime, b.endTime),
+    })),
   ].sort((a, b) => a.range.localeCompare(b.range))
 
-  const changeDate = (d: string) => router.get(`/app/spaces/${space.id}`, { date: d }, { preserveScroll: true })
+  const changeDate = (d: string) =>
+    router.get(`/app/spaces/${space.id}`, { date: d }, { preserveScroll: true })
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     form.post('/app/bookings')
@@ -95,7 +123,10 @@ export default function SpacePage({ space, date, occupied }: { space: Space; dat
   return (
     <>
       <Head title={space.name} />
-      <Link href="/app" className="mb-4 inline-flex items-center gap-1 text-sm text-slate-6 hover:text-graphite">
+      <Link
+        href="/app"
+        className="mb-4 inline-flex items-center gap-1 text-sm text-slate-6 hover:text-graphite"
+      >
         <ArrowLeft className="size-4" /> Volver
       </Link>
 
@@ -113,7 +144,9 @@ export default function SpacePage({ space, date, occupied }: { space: Space; dat
                   {TYPE_LABEL[space.type]}
                   {space.type === 'cancha' && space.size ? ` ${space.size}` : ''}
                 </span>
-                <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{space.name}</h1>
+                <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+                  {space.name}
+                </h1>
                 <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-chalk/85">
                   <span className="inline-flex items-center gap-1">
                     <MapPin className="size-3.5" /> {space.location}
@@ -132,7 +165,10 @@ export default function SpacePage({ space, date, occupied }: { space: Space; dat
         {/* Availability */}
         <Card className="p-5 sm:p-6">
           <p className="text-sm text-slate-6">
-            <span className="text-xl font-bold tabular-nums text-graphite">{money(space.pricePerHour)}</span> / hora
+            <span className="text-xl font-bold tabular-nums text-graphite">
+              {money(space.pricePerHour)}
+            </span>{' '}
+            / hora
             {space.capacity ? <span className="ml-3">· cupo {space.capacity}</span> : null}
           </p>
 
@@ -157,7 +193,10 @@ export default function SpacePage({ space, date, occupied }: { space: Space; dat
             ) : (
               <ul className="flex flex-wrap gap-2">
                 {occupiedSlots.map((s, i) => (
-                  <li key={i} className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium ${TONE[s.tone]}`}>
+                  <li
+                    key={i}
+                    className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium ${TONE[s.tone]}`}
+                  >
                     <span className="tabular-nums">{s.range}</span> · {s.label}
                   </li>
                 ))}
@@ -185,7 +224,11 @@ export default function SpacePage({ space, date, occupied }: { space: Space; dat
             <form id="booking-form" onSubmit={submit} className="mt-4 flex flex-col gap-4">
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Inicio" error={form.errors.startTime}>
-                  <Select value={form.data.startTime} onChange={(e) => pickStart(e.target.value)} required>
+                  <Select
+                    value={form.data.startTime}
+                    onChange={(e) => pickStart(e.target.value)}
+                    required
+                  >
                     <option value="" disabled>
                       Hora…
                     </option>
@@ -219,12 +262,16 @@ export default function SpacePage({ space, date, occupied }: { space: Space; dat
               <div className="hidden flex-col gap-4 lg:flex">
                 <div className="flex items-center justify-between rounded-lg bg-bone-2 px-3.5 py-2.5 text-sm">
                   <span className="text-slate-6">{hours > 0 ? `${hours} h` : 'Total'}</span>
-                  <span className="font-bold tabular-nums text-graphite">{money(hours * space.pricePerHour)}</span>
+                  <span className="font-bold tabular-nums text-graphite">
+                    {money(hours * space.pricePerHour)}
+                  </span>
                 </div>
                 <Button type="submit" variant="lime" disabled={form.processing || hours <= 0}>
                   {form.processing ? 'Reservando…' : 'Reservar'}
                 </Button>
-                <p className="text-center text-xs text-slate-6">Apartas ahora, pagas para confirmar.</p>
+                <p className="text-center text-xs text-slate-6">
+                  Apartas ahora, pagas para confirmar.
+                </p>
               </div>
             </form>
           )}
@@ -238,8 +285,12 @@ export default function SpacePage({ space, date, occupied }: { space: Space; dat
           <div className="fixed inset-x-0 bottom-0 z-40 border-t border-bone-3 bg-bone-1/95 backdrop-blur lg:hidden">
             <div className="mx-auto flex max-w-5xl items-center gap-4 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
               <div className="flex-1 leading-tight">
-                <p className="text-[11px] text-slate-6">{hours > 0 ? `${hours} h · total` : 'Elige tu horario'}</p>
-                <p className="text-lg font-bold tabular-nums text-graphite">{money(hours * space.pricePerHour)}</p>
+                <p className="text-[11px] text-slate-6">
+                  {hours > 0 ? `${hours} h · total` : 'Elige tu horario'}
+                </p>
+                <p className="text-lg font-bold tabular-nums text-graphite">
+                  {money(hours * space.pricePerHour)}
+                </p>
               </div>
               <Button
                 type="submit"

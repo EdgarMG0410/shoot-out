@@ -37,7 +37,8 @@ export default function MyBookings({ bookings }: { bookings: BookingRow[] }) {
               <div className="flex-1">
                 <p className="font-medium text-graphite">{b.space}</p>
                 <p className="text-sm text-slate-6">
-                  {formatDate(b.date)} · <span className="tabular-nums">{timeRange(b.startTime, b.endTime)}</span>
+                  {formatDate(b.date)} ·{' '}
+                  <span className="tabular-nums">{timeRange(b.startTime, b.endTime)}</span>
                 </p>
               </div>
               <StatusPill status={b.status} />
