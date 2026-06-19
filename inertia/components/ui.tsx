@@ -1,43 +1,30 @@
 import { forwardRef, useEffect, useState, type ReactNode } from 'react'
 import { usePage } from '@inertiajs/react'
+import { sileo, Toaster } from 'sileo'
 import { ImageOff, X } from 'lucide-react'
 import { cn } from '~/lib/utils'
 
 /* ----------------------------- FlashToasts ------------------------------ */
 
+/**
+ * Bridges server flash messages → sileo toasts (same pattern as marc-reports).
+ * Mounts the <Toaster>; render once per layout.
+ */
 export function FlashToasts() {
-  const flash = (usePage().props as { flash?: { success: string | null; error: string | null } })
-    .flash
-  const [items, setItems] = useState<{ tone: 'success' | 'error'; text: string }[]>([])
+  const page = usePage<{ flash?: { success: string | null; error: string | null } }>()
+  const flash = page.props.flash
+
+  // Drop stale toasts when navigating to a new page.
+  useEffect(() => {
+    sileo.clear()
+  }, [page.url])
 
   useEffect(() => {
-    const next: { tone: 'success' | 'error'; text: string }[] = []
-    if (flash?.success) next.push({ tone: 'success', text: flash.success })
-    if (flash?.error) next.push({ tone: 'error', text: flash.error })
-    if (!next.length) return
-    setItems(next)
-    const t = setTimeout(() => setItems([]), 3800)
-    return () => clearTimeout(t)
-  }, [flash?.success, flash?.error])
+    if (flash?.error) sileo.error({ title: flash.error })
+    if (flash?.success) sileo.success({ title: flash.success })
+  }, [flash])
 
-  if (!items.length) return null
-  return (
-    <div className="fixed inset-x-0 top-4 z-[60] flex flex-col items-center gap-2 px-4">
-      {items.map((item, i) => (
-        <div
-          key={i}
-          className={cn(
-            'page-enter rounded-lg border px-4 py-2 text-sm font-medium shadow-sm',
-            item.tone === 'success'
-              ? 'border-emerald-mark/30 bg-emerald-mark/10 text-emerald-mark'
-              : 'border-rose-mark/30 bg-rose-mark/10 text-rose-mark'
-          )}
-        >
-          {item.text}
-        </div>
-      ))}
-    </div>
-  )
+  return <Toaster position="top-center" theme="light" />
 }
 
 /* ------------------------------- Button -------------------------------- */

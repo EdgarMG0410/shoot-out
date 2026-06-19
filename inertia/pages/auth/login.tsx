@@ -1,11 +1,8 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react'
-import { Button, Field, Input } from '~/components/ui'
+import { Head, Link, useForm } from '@inertiajs/react'
+import { Button, Field, FlashToasts, Input } from '~/components/ui'
 import { Logo } from '~/components/logo'
 
-type LoginProps = { flash: { error: string | null; success: string | null } }
-
 export default function Login() {
-  const { flash } = usePage<LoginProps>().props
   const form = useForm({ email: '', password: '' })
 
   const submit = (e: React.FormEvent) => {
@@ -16,6 +13,7 @@ export default function Login() {
   return (
     <>
       <Head title="Entrar" />
+      <FlashToasts />
       <div className="flex min-h-screen items-center justify-center bg-graphite px-4 py-10">
         <div className="w-full max-w-sm">
           <div className="mb-8 flex flex-col items-center gap-4 text-center">
@@ -24,12 +22,6 @@ export default function Login() {
           </div>
 
           <div className="rounded-2xl border border-graphite-3/40 bg-chalk p-6 shadow-xl">
-            {flash?.error && (
-              <div className="mb-4 rounded-lg border border-rose-mark/30 bg-rose-mark/10 px-3.5 py-2.5 text-sm font-medium text-rose-mark">
-                {flash.error}
-              </div>
-            )}
-
             <form onSubmit={submit} className="flex flex-col gap-4">
               <Field label="Correo" error={form.errors.email}>
                 <Input

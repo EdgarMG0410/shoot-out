@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link, router, usePage } from '@inertiajs/react'
 import {
   Building2,
@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { cn } from '~/lib/utils'
 import { Logo } from '~/components/logo'
+import { FlashToasts } from '~/components/ui'
 
 type SharedUser = { id: number; fullName: string | null; email: string; role: string } | null
 type SharedProps = {
@@ -100,39 +101,6 @@ function SidebarBody({ user, url, onNavigate }: { user: SharedUser; url: string;
   )
 }
 
-function Toasts({ flash }: { flash: SharedProps['flash'] }) {
-  const [items, setItems] = useState<{ tone: 'success' | 'error'; text: string }[]>([])
-
-  useEffect(() => {
-    const next: { tone: 'success' | 'error'; text: string }[] = []
-    if (flash?.success) next.push({ tone: 'success', text: flash.success })
-    if (flash?.error) next.push({ tone: 'error', text: flash.error })
-    if (!next.length) return
-    setItems(next)
-    const t = setTimeout(() => setItems([]), 3800)
-    return () => clearTimeout(t)
-  }, [flash?.success, flash?.error])
-
-  if (!items.length) return null
-  return (
-    <div className="fixed inset-x-0 top-4 z-[60] flex flex-col items-center gap-2 px-4">
-      {items.map((item, i) => (
-        <div
-          key={i}
-          className={cn(
-            'page-enter rounded-lg border px-4 py-2 text-sm font-medium shadow-sm',
-            item.tone === 'success'
-              ? 'border-emerald-mark/30 bg-emerald-mark/10 text-emerald-mark'
-              : 'border-rose-mark/30 bg-rose-mark/10 text-rose-mark'
-          )}
-        >
-          {item.text}
-        </div>
-      ))}
-    </div>
-  )
-}
-
 export default function DashboardLayout({
   title,
   subtitle,
@@ -145,13 +113,13 @@ export default function DashboardLayout({
   children: ReactNode
 }) {
   const page = usePage<SharedProps>()
-  const { user, flash } = page.props
+  const { user } = page.props
   const url = page.url
   const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
     <div className="min-h-screen bg-bone-1 text-graphite">
-      <Toasts flash={flash} />
+      <FlashToasts />
 
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[248px] bg-graphite lg:block">

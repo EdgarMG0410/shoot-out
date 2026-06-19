@@ -1,5 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react'
-import { Button, Field, Input, Select } from '~/components/ui'
+import { Button, Field, FlashToasts, Input, Select } from '~/components/ui'
 import { Logo } from '~/components/logo'
 
 export default function Register() {
@@ -13,6 +13,7 @@ export default function Register() {
   return (
     <>
       <Head title="Crear cuenta" />
+      <FlashToasts />
       <div className="flex min-h-screen items-center justify-center bg-graphite px-4 py-10">
         <div className="w-full max-w-sm">
           <div className="mb-8 flex flex-col items-center gap-4 text-center">
