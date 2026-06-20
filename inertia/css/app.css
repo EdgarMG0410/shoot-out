@@ -16,7 +16,7 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
   /* Display/heading family. Drop Commuters Sans files via @font-face below to
      activate it; until then it falls back to Geist gracefully. */
-  --font-display: 'Commuters Sans', 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Space Grotesk Variable', 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
 
   --color-graphite: oklch(20% 0.01 250);
   --color-graphite-2: oklch(26% 0.012 250);
@@ -30,18 +30,19 @@
   --color-slate-3: oklch(72% 0.01 250);
   --color-slate-6: oklch(50% 0.013 250);
 
-  /* Brand accent — desaturated to neutral gray (was turf-green). */
-  --color-lime-mark: oklch(86% 0 0);
-  --color-lime-deep: oklch(78% 0 0);
-  /* Semantic status — kept in hue on purpose (success / warning / error). */
+  /* Brand accent — vivid turf green (the signature). Bright mark for fills on
+     dark/photo, deep for readable text + links on light. */
+  --color-lime-mark: oklch(85% 0.21 143);
+  --color-lime-deep: oklch(55% 0.15 148);
+  /* Semantic status — success / warning / error. */
   --color-emerald-mark: oklch(62% 0.15 158);
   --color-amber-mark: oklch(80% 0.13 80);
   --color-rose-mark: oklch(63% 0.2 18);
 
-  /* Secondary accents — also neutralized to grays for the monochrome brand. */
-  --color-electric: oklch(72% 0 0);
-  --color-electric-deep: oklch(63% 0 0);
-  --color-flame: oklch(70% 0 0);
+  /* Energy accents — electric blue + flame orange, used sparingly for spark. */
+  --color-electric: oklch(70% 0.16 240);
+  --color-electric-deep: oklch(55% 0.16 245);
+  --color-flame: oklch(70% 0.2 45);
 
   --radius: 0.5rem;
   --radius-lg: 0.5rem;
@@ -89,6 +90,11 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+  }
+  /* Display family on headings for a sportier voice. */
+  h1,
+  h2 {
+    font-family: var(--font-display);
   }
   body {
     background-color: var(--color-bone-1);
@@ -157,11 +163,108 @@
   animation: grow-up 540ms cubic-bezier(0.25, 1, 0.5, 1) both;
 }
 
+/* Chart motion — line draw-on + soft fade-in for areas/markers. */
+@keyframes draw-line {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
+  }
+}
+
+/* ===================================================================== */
+/* Landing craft — motion tokens, scroll reveals, marquee, micro-detail  */
+/* (top-design: custom easing only, no ease/linear on reveals).          */
+/* ===================================================================== */
+
+:root {
+  --ease-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Branded text selection — graphite ink, chalk text. */
+::selection {
+  background: var(--color-graphite);
+  color: var(--color-chalk);
+}
+
+/* Scroll-reveal: hidden until JS adds .reveal-in when the element enters. */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.7s var(--ease-quart),
+    transform 0.7s var(--ease-quart);
+  will-change: opacity, transform;
+}
+.reveal-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Hero headline — word-by-word lift on load (delay set inline for stagger). */
+@keyframes word-up {
+  from {
+    opacity: 0;
+    transform: translateY(0.55em) rotate(2deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.word-up {
+  display: inline-block;
+  animation: word-up 0.85s var(--ease-expo) both;
+}
+
+/* Infinite community marquee with edge fade-out mask. */
+.marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee var(--marquee-duration, 46s) linear infinite;
+}
+.marquee[data-reverse='true'] .marquee-track {
+  animation-direction: reverse;
+}
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+  .word-up {
+    animation: none;
+  }
+  .marquee-track {
+    animation: none;
   }
 }

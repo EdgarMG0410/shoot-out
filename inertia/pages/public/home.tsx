@@ -2,7 +2,9 @@ import { useMemo, useRef, useState } from 'react'
 import { Head, Link, useForm } from '@inertiajs/react'
 import {
   ArrowRight,
+  ArrowUpRight,
   CalendarCheck,
+  ChevronDown,
   Clock,
   MapPin,
   Megaphone,
@@ -11,13 +13,12 @@ import {
   Zap,
 } from 'lucide-react'
 import PublicLayout from '~/layouts/public'
-import { Button, Card, Field, Input, Photo, Select, Textarea } from '~/components/ui'
+import { Button, Card, Field, Input, Photo, Select } from '~/components/ui'
+import { Reveal, CountUp, Marquee, Magnetic, CommunityGallery } from '~/components/interactive'
+import { COMMUNITY_PHOTOS, HERO_PHOTO } from '~/lib/community'
 import { cn } from '~/lib/utils'
 import { money } from '~/lib/format'
 import { spaceImage } from '~/lib/stock'
-
-const HERO_IMG =
-  'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1600&q=70&auto=format&fit=crop'
 
 type Space = {
   id: number
@@ -49,29 +50,22 @@ type LeagueRow = {
 const TYPE_LABEL: Record<string, string> = { cancha: 'Cancha', terraza: 'Terraza', otro: 'Otro' }
 const hhmm = (t: string) => (t ?? '').slice(0, 5)
 
-type Filter = 'todos' | 'cancha' | 'terraza'
-const FILTERS: { key: Filter; label: string }[] = [
-  { key: 'todos', label: 'Todo' },
-  { key: 'cancha', label: 'Canchas' },
-  { key: 'terraza', label: 'Terrazas' },
-]
+const HERO_TITLE_TOP = ['El', 'futbol', 'amateur']
+const HERO_TITLE_BOTTOM = ['vive', 'aquí.']
 
 const PLAYER_BENEFITS = [
   {
     icon: MapPin,
-    accent: 'bg-lime-mark/20 text-lime-deep',
     title: 'Encuentra cancha cerca',
     text: 'Busca por zona y tipo, mira fotos, precio y horarios.',
   },
   {
     icon: CalendarCheck,
-    accent: 'bg-electric/15 text-electric-deep',
     title: 'Reserva en segundos',
     text: 'Apartas tu horario con solo tu correo. Sin filas, sin llamadas.',
   },
   {
     icon: Users,
-    accent: 'bg-flame/15 text-flame',
     title: 'Arma tu partido',
     text: 'Publica retas, súmate a partidos abiertos y encuentra jugadores.',
   },
@@ -79,19 +73,16 @@ const PLAYER_BENEFITS = [
 const OWNER_BENEFITS = [
   {
     icon: CalendarCheck,
-    accent: 'bg-electric/15 text-electric-deep',
     title: 'Llena tus horarios',
     text: 'Publica disponibilidad y recibe reservas de nuevos jugadores.',
   },
   {
     icon: Trophy,
-    accent: 'bg-lime-mark/20 text-lime-deep',
     title: 'Administra torneos',
     text: 'Ligas, calendario, tabla de posiciones y estadísticas en un panel.',
   },
   {
     icon: Megaphone,
-    accent: 'bg-amber-mark/20 text-amber-mark',
     title: 'Más visibilidad',
     text: 'Tu cancha aparece ante toda la comunidad futbolera de la zona.',
   },
@@ -139,30 +130,104 @@ function SpaceCard({ space }: { space: Space }) {
   )
 }
 
-function BenefitList({
-  heading,
+function LocationRow({ loc, defaultOpen = false }: { loc: Loc; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen)
+  const minPrice = loc.spaces.length ? Math.min(...loc.spaces.map((s) => s.pricePerHour)) : 0
+  const thumb = loc.photoUrl || (loc.spaces[0] ? spaceImage(loc.spaces[0]) : '')
+  const n = loc.spaces.length
+
+  return (
+    <div className="overflow-hidden rounded-3xl border border-bone-3 bg-chalk transition-shadow duration-300 hover:shadow-md">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center gap-4 p-3 text-left sm:p-4"
+      >
+        <img
+          src={thumb}
+          alt=""
+          aria-hidden="true"
+          className="size-16 shrink-0 rounded-2xl object-cover ring-1 ring-bone-3 sm:size-20"
+        />
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-semibold text-graphite">{loc.name}</p>
+          <p className="mt-0.5 flex items-center gap-1 truncate text-sm text-slate-6">
+            <MapPin className="size-3.5 shrink-0" /> {loc.zona || loc.address}
+          </p>
+        </div>
+        <div className="hidden shrink-0 text-right sm:block">
+          <p className="text-sm font-semibold text-graphite">
+            {n} {n === 1 ? 'cancha' : 'canchas'}
+          </p>
+          <p className="text-xs text-slate-6">desde {money(minPrice)}/h</p>
+        </div>
+        <span
+          className={cn(
+            'grid size-9 shrink-0 place-items-center rounded-full bg-bone-2 text-graphite transition-transform duration-300 ease-(--ease-quart)',
+            open && 'rotate-180'
+          )}
+        >
+          <ChevronDown className="size-4.5" />
+        </span>
+      </button>
+      <div
+        className={cn(
+          'grid transition-[grid-template-rows] duration-500 ease-(--ease-quart)',
+          open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+        )}
+      >
+        <div className="overflow-hidden">
+          <div className="grid grid-cols-2 gap-x-5 gap-y-8 border-t border-bone-3 p-4 sm:p-5 md:grid-cols-3">
+            {loc.spaces.map((s) => (
+              <SpaceCard key={s.id} space={s} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function BenefitColumn({
+  label,
   items,
+  cta,
 }: {
-  heading: string
-  items: { icon: typeof MapPin; accent: string; title: string; text: string }[]
+  label: string
+  items: { title: string; text: string }[]
+  cta: { label: string; onClick: () => void }
 }) {
   return (
-    <Card className="p-6">
-      <h3 className="mb-5 text-lg font-bold tracking-tight text-graphite">{heading}</h3>
-      <ul className="flex flex-col gap-5">
-        {items.map((b) => (
-          <li key={b.title} className="flex gap-3.5">
-            <span className={cn('grid size-10 shrink-0 place-items-center rounded-xl', b.accent)}>
-              <b.icon className="size-5" />
+    <div>
+      <div className="flex items-baseline justify-between border-b-2 border-graphite pb-3">
+        <h3 className="text-sm font-bold uppercase tracking-[0.16em] text-graphite">{label}</h3>
+        <span className="font-display text-sm tabular-nums text-slate-6">
+          {String(items.length).padStart(2, '0')}
+        </span>
+      </div>
+      <ul>
+        {items.map((b, i) => (
+          <li key={b.title} className="group flex items-start gap-5 border-b border-bone-3 py-5">
+            <span className="font-display w-8 shrink-0 text-[1.75rem] font-bold leading-none tabular-nums text-bone-3 transition-colors duration-300 ease-(--ease-quart) group-hover:text-graphite">
+              {String(i + 1).padStart(2, '0')}
             </span>
-            <div>
+            <div className="flex-1">
               <p className="font-semibold text-graphite">{b.title}</p>
-              <p className="mt-0.5 text-sm text-slate-6">{b.text}</p>
+              <p className="mt-1 text-sm leading-relaxed text-slate-6">{b.text}</p>
             </div>
+            <ArrowUpRight className="mt-0.5 size-4 shrink-0 -translate-x-1.5 text-graphite opacity-0 transition-all duration-300 ease-(--ease-expo) group-hover:translate-x-0 group-hover:opacity-100" />
           </li>
         ))}
       </ul>
-    </Card>
+      <button
+        type="button"
+        onClick={cta.onClick}
+        className="group/cta mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-graphite hover:text-slate-6"
+      >
+        {cta.label}
+        <ArrowUpRight className="size-4 transition-transform duration-300 ease-(--ease-expo) group-hover/cta:-translate-y-0.5 group-hover/cta:translate-x-0.5" />
+      </button>
+    </div>
   )
 }
 
@@ -174,49 +239,60 @@ function LeadForm({ initialType }: { initialType: 'jugador' | 'cancha' }) {
     form.post('/interesados', { preserveScroll: true, onSuccess: () => form.reset() })
   }
 
+  const TYPES = [
+    { key: 'jugador', label: 'Soy jugador' },
+    { key: 'cancha', label: 'Tengo cancha' },
+  ] as const
+
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Nombre" error={form.errors.name}>
-          <Input
-            value={form.data.name}
-            onChange={(e) => form.setData('name', e.target.value)}
-            placeholder="Tu nombre"
-            required
-          />
-        </Field>
-        <Field label="Correo" error={form.errors.email}>
-          <Input
-            type="email"
-            value={form.data.email}
-            onChange={(e) => form.setData('email', e.target.value)}
-            placeholder="tu@correo.com"
-            required
-          />
-        </Field>
-        <Field label="Teléfono" hint="Opcional" error={form.errors.phone}>
-          <Input
-            value={form.data.phone}
-            onChange={(e) => form.setData('phone', e.target.value)}
-            placeholder="33 1234 5678"
-          />
-        </Field>
-        <Field label="Soy" error={form.errors.type}>
-          <Select value={form.data.type} onChange={(e) => form.setData('type', e.target.value)}>
-            <option value="jugador">Jugador — quiero reservar</option>
-            <option value="cancha">Cancha — quiero registrarme</option>
-          </Select>
-        </Field>
+      <div className="grid grid-cols-2 gap-1 rounded-2xl bg-bone-2 p-1">
+        {TYPES.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => form.setData('type', t.key)}
+            className={cn(
+              'rounded-xl px-3 py-2 text-sm font-semibold transition-colors',
+              form.data.type === t.key
+                ? 'bg-graphite text-chalk shadow-sm'
+                : 'text-slate-6 hover:text-graphite'
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
-      <Field label="Mensaje" hint="Opcional" error={form.errors.message}>
-        <Textarea
-          value={form.data.message}
-          onChange={(e) => form.setData('message', e.target.value)}
-          placeholder="Cuéntanos qué buscas…"
+      <Field label="Nombre" error={form.errors.name}>
+        <Input
+          value={form.data.name}
+          onChange={(e) => form.setData('name', e.target.value)}
+          placeholder="Tu nombre"
+          required
         />
       </Field>
-      <Button type="submit" variant="lime" className="self-start" disabled={form.processing}>
-        {form.processing ? 'Enviando…' : 'Quiero más información'}
+      <Field label="Correo" error={form.errors.email}>
+        <Input
+          type="email"
+          value={form.data.email}
+          onChange={(e) => form.setData('email', e.target.value)}
+          placeholder="tu@correo.com"
+          required
+        />
+      </Field>
+      <Field label="Teléfono" hint="Opcional" error={form.errors.phone}>
+        <Input
+          value={form.data.phone}
+          onChange={(e) => form.setData('phone', e.target.value)}
+          placeholder="33 1234 5678"
+        />
+      </Field>
+      <Button type="submit" variant="lime" className="mt-1 w-full" disabled={form.processing}>
+        {form.processing
+          ? 'Enviando…'
+          : form.data.type === 'cancha'
+            ? 'Registrar mi cancha'
+            : 'Quiero jugar'}
       </Button>
     </form>
   )
@@ -233,7 +309,6 @@ export default function PublicHome({
   locations: Loc[]
   leagues: LeagueRow[]
 }) {
-  const [filter, setFilter] = useState<Filter>('todos')
   const [zona, setZona] = useState<string>('todas')
   const [leadType, setLeadType] = useState<'jugador' | 'cancha'>('jugador')
   const canchasRef = useRef<HTMLDivElement>(null)
@@ -248,78 +323,101 @@ export default function PublicHome({
     () =>
       locations
         .filter((l) => zona === 'todas' || l.zona === zona)
-        .map((l) => ({
-          ...l,
-          spaces: filter === 'todos' ? l.spaces : l.spaces.filter((s) => s.type === filter),
-        }))
         .filter((l) => l.spaces.length > 0),
-    [locations, filter, zona]
+    [locations, zona]
   )
 
   const scrollTo = (ref: React.RefObject<HTMLDivElement | null>) =>
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
-  const HERO_CARDS = [
-    {
-      icon: CalendarCheck,
-      title: 'Reserva en segundos',
-      text: 'Aparta tu horario solo con tu correo.',
-    },
-    { icon: Trophy, title: 'Torneos y tabla', text: 'Ligas, calendario y estadísticas en vivo.' },
-    { icon: Users, title: 'Comunidad', text: 'Arma retas y encuentra jugadores cerca.' },
+  const HERO_STATS = [
+    { n: stats.sucursales, l: 'Sucursales' },
+    { n: stats.canchas, l: 'Canchas' },
+    { n: stats.ligas, l: 'Ligas activas' },
   ]
+
+  let wordDelay = 220
 
   return (
     <>
       <Head title="Reserva canchas, arma partidos y administra torneos" />
 
-      {/* Hero — full-bleed */}
-      <section className="relative isolate overflow-hidden">
+      {/* ============================ Hero ============================ */}
+      <section className="relative isolate flex min-h-dvh items-center overflow-hidden">
         <img
-          src={HERO_IMG}
+          src={HERO_PHOTO.src}
           alt=""
           aria-hidden="true"
-          className="absolute inset-0 -z-10 size-full object-cover"
+          className="absolute inset-0 -z-10 size-full min-h-dvh scale-105 object-cover"
         />
         <div className="hero-scrim absolute inset-0 -z-10" />
-        <div className="mx-auto max-w-7xl px-5 sm:px-8">
-          <div className="grid items-center gap-12 py-16 text-chalk lg:grid-cols-[1.15fr_0.85fr] lg:py-24">
+
+        <div className="mx-auto w-full max-w-7xl px-5 sm:px-8">
+          <div className="grid items-center gap-12 py-20 text-chalk lg:grid-cols-[1.25fr_0.75fr] lg:py-28">
             <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-lime-mark/20 px-3 py-1 text-xs font-bold uppercase tracking-wide text-lime-mark ring-1 ring-lime-mark/30">
-                <Zap className="size-3.5" /> Marketplace deportivo
+              <span className="hidden md:inline-flex items-center gap-1.5 rounded-full bg-chalk/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-chalk ring-1 ring-chalk/25 backdrop-blur motion-safe:animate-[fade-in_700ms_var(--ease-quart)_both]">
+                <Zap className="size-3.5" /> Marketplace deportivo · Guadalajara
               </span>
-              <h1 className="mt-5 text-5xl font-bold leading-[1.02] tracking-tight sm:text-6xl xl:text-7xl">
-                Reserva canchas, arma partidos y administra torneos
+
+              <h1 className="mt-6 text-[3.25rem] font-bold leading-[0.92] tracking-[-0.03em] sm:text-7xl xl:text-[6.5rem]">
+                <div className="block">
+                  {HERO_TITLE_TOP.map((w) => (
+                    <span
+                      key={w}
+                      className="word-up mr-[0.22em]"
+                      style={{ animationDelay: `${(wordDelay += 90)}ms` }}
+                    >
+                      {w}
+                    </span>
+                  ))}
+                </div>
+                <div className="block text-lime-mark">
+                  {HERO_TITLE_BOTTOM.map((w) => (
+                    <span
+                      key={w}
+                      className="word-up mr-[0.22em]"
+                      style={{ animationDelay: `${(wordDelay += 90)}ms` }}
+                    >
+                      {w}
+                    </span>
+                  ))}
+                </div>
               </h1>
-              <p className="mt-5 max-w-xl text-lg text-chalk/75">
+
+              <p className="mt-6 max-w-xl text-lg leading-relaxed text-chalk/75 motion-safe:animate-[fade-in_800ms_600ms_var(--ease-quart)_both]">
                 Futhub conecta jugadores y canchas. Encuentra dónde jugar, aparta tu horario y vive
                 el fútbol amateur sin complicaciones.
               </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Button variant="lime" size="md" onClick={() => scrollTo(canchasRef)}>
-                  Quiero reservar cancha <ArrowRight />
-                </Button>
+
+              <div className="mt-9 flex flex-col gap-3 motion-safe:animate-[fade-in_800ms_750ms_var(--ease-quart)_both] sm:flex-row sm:flex-wrap">
+                <Magnetic className="w-full sm:w-auto">
+                  <Button
+                    variant="lime"
+                    size="md"
+                    className="w-full sm:w-auto"
+                    onClick={() => scrollTo(canchasRef)}
+                  >
+                    Quiero reservar cancha <ArrowRight />
+                  </Button>
+                </Magnetic>
                 <button
                   type="button"
                   onClick={() => {
                     setLeadType('cancha')
                     scrollTo(leadRef)
                   }}
-                  className="inline-flex h-10 items-center justify-center rounded-lg border border-chalk/25 bg-chalk/10 px-5 text-sm font-medium text-chalk backdrop-blur transition-colors hover:bg-chalk/20"
+                  className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-chalk/25 bg-chalk/10 px-5 text-sm font-medium text-chalk backdrop-blur transition-colors hover:bg-chalk/20 sm:w-auto"
                 >
                   Quiero registrar mi cancha
                 </button>
               </div>
 
-              {/* Stat strip */}
-              <dl className="mt-10 flex flex-wrap gap-x-10 gap-y-4 border-t border-chalk/15 pt-6">
-                {[
-                  { n: stats.sucursales, l: 'Sucursales' },
-                  { n: stats.canchas, l: 'Canchas' },
-                  { n: stats.ligas, l: 'Ligas activas' },
-                ].map((s) => (
+              <dl className="mt-12 flex flex-wrap gap-x-10 gap-y-4 border-t border-chalk/15 pt-6 motion-safe:animate-[fade-in_800ms_900ms_var(--ease-quart)_both]">
+                {HERO_STATS.map((s) => (
                   <div key={s.l}>
-                    <dt className="text-3xl font-bold tabular-nums text-lime-mark">{s.n}</dt>
+                    <dt className="text-4xl font-bold tabular-nums text-lime-mark">
+                      <CountUp value={s.n} />
+                    </dt>
                     <dd className="text-xs font-medium uppercase tracking-wide text-chalk/60">
                       {s.l}
                     </dd>
@@ -328,66 +426,117 @@ export default function PublicHome({
               </dl>
             </div>
 
-            {/* Floating feature cards (desktop) */}
-            <div className="hidden flex-col gap-3 lg:flex">
-              {HERO_CARDS.map((c) => (
-                <div
-                  key={c.title}
-                  className="flex items-center gap-4 rounded-2xl border border-chalk/15 bg-chalk/10 p-4 backdrop-blur-md"
-                >
-                  <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-lime-mark text-graphite">
-                    <c.icon className="size-5" />
+            {/* Floating community card (desktop) */}
+            <div className="hidden justify-self-end lg:block motion-safe:animate-[fade-in_900ms_700ms_var(--ease-expo)_both]">
+              <div className="w-72 rotate-2 overflow-hidden rounded-3xl bg-chalk/10 p-2 shadow-2xl ring-1 ring-chalk/20 backdrop-blur-md transition-transform duration-500 [transition-timing-function:var(--ease-expo)] hover:rotate-0">
+                <img
+                  src={COMMUNITY_PHOTOS[6].src}
+                  alt={COMMUNITY_PHOTOS[6].alt}
+                  className="aspect-4/5 w-full rounded-2xl object-cover"
+                />
+                <div className="flex items-center gap-2.5 px-3 py-3">
+                  <span className="relative flex size-2.5">
+                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-lime-mark opacity-75" />
+                    <span className="relative inline-flex size-2.5 rounded-full bg-lime-mark" />
                   </span>
-                  <div>
-                    <p className="font-semibold text-chalk">{c.title}</p>
-                    <p className="text-sm text-chalk/65">{c.text}</p>
-                  </div>
+                  <p className="text-sm font-medium text-chalk">Comunidad activa cada semana</p>
                 </div>
-              ))}
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Scroll cue */}
+        <div className="absolute inset-x-0 bottom-5 flex justify-center text-chalk/55 motion-safe:animate-[fade-in_1s_1.1s_var(--ease-quart)_both]">
+          <ChevronDown className="size-6 motion-safe:animate-bounce" />
+        </div>
       </section>
 
-      {/* Body */}
-      <div className="mx-auto max-w-7xl space-y-20 px-5 pb-24 pt-16 sm:px-8">
-        {/* Benefits */}
-        <section className="grid gap-6 lg:grid-cols-2">
-          <BenefitList heading="Para jugadores" items={PLAYER_BENEFITS} />
-          <BenefitList heading="Para canchas" items={OWNER_BENEFITS} />
+      {/* ===================== Community marquee ===================== */}
+      <section className="border-y border-bone-3 bg-graphite py-12">
+        <div className="mx-auto mb-8 max-w-7xl px-5 sm:px-8">
+          <div className="flex items-center gap-3">
+            <span className="h-7 w-1.5 rounded-full bg-lime-mark" />
+            <h2 className="text-2xl font-bold tracking-tight text-chalk sm:text-3xl">
+              La comunidad que ya juega
+            </h2>
+          </div>
+          <p className="mt-1 pl-[18px] text-sm text-chalk/55">
+            Retas, torneos y equipos reales en nuestras canchas.
+          </p>
+        </div>
+        <Marquee speed={52}>
+          {COMMUNITY_PHOTOS.map((p) => (
+            <div
+              key={p.src}
+              className="mr-4 aspect-4/3 w-[clamp(15rem,32vw,21rem)] shrink-0 overflow-hidden rounded-2xl ring-1 ring-chalk/10"
+            >
+              <img src={p.src} alt={p.alt} loading="lazy" className="size-full object-cover" />
+            </div>
+          ))}
+        </Marquee>
+      </section>
+
+      {/* ============================ Body ============================ */}
+      <div className="mx-auto max-w-7xl space-y-24 px-5 pb-24 pt-20 sm:px-8">
+        {/* Value props — editorial index */}
+        <section className="border-t border-bone-3 pt-14">
+          <Reveal>
+            <div className="grid gap-6 lg:grid-cols-12 lg:items-end">
+              <div className="lg:col-span-7">
+                <span className="text-xs font-bold uppercase tracking-[0.2em] text-slate-6">
+                  Por qué Futhub
+                </span>
+                <h2 className="mt-3 text-4xl font-bold leading-[1.04] tracking-tight text-graphite sm:text-5xl">
+                  Menos organizar.
+                  <br />
+                  Más jugar.
+                </h2>
+              </div>
+              <p className="text-slate-6 lg:col-span-5 lg:pb-2">
+                Conectamos a quien quiere jugar con quien tiene la cancha — sin grupos de WhatsApp
+                eternos ni llamadas.
+              </p>
+            </div>
+          </Reveal>
+          <div className="mt-12 grid gap-x-14 gap-y-12 lg:grid-cols-2">
+            <Reveal>
+              <BenefitColumn
+                label="Para jugadores"
+                items={PLAYER_BENEFITS}
+                cta={{ label: 'Ver canchas disponibles', onClick: () => scrollTo(canchasRef) }}
+              />
+            </Reveal>
+            <Reveal delay={100}>
+              <BenefitColumn
+                label="Para canchas"
+                items={OWNER_BENEFITS}
+                cta={{
+                  label: 'Registrar mi cancha',
+                  onClick: () => {
+                    setLeadType('cancha')
+                    scrollTo(leadRef)
+                  },
+                }}
+              />
+            </Reveal>
+          </div>
         </section>
 
-        {/* Canchas listing */}
+        {/* Canchas listing — compact location accordion */}
         <div ref={canchasRef} className="scroll-mt-24">
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <span className="h-8 w-1.5 rounded-full bg-lime-mark" />
-              <div>
-                <h2 className="text-3xl font-bold tracking-tight text-graphite">
-                  Encuentra tu cancha
-                </h2>
-                <p className="mt-0.5 text-sm text-slate-6">Filtra por zona y tipo de espacio.</p>
-              </div>
-            </div>
-
-            {/* Filters */}
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="inline-flex gap-1 rounded-2xl bg-bone-2 p-1">
-                {FILTERS.map((f) => (
-                  <button
-                    key={f.key}
-                    type="button"
-                    onClick={() => setFilter(f.key)}
-                    className={cn(
-                      'rounded-xl px-4 py-1.5 text-sm font-semibold transition-colors',
-                      filter === f.key
-                        ? 'bg-graphite text-chalk shadow-sm'
-                        : 'text-slate-6 hover:text-graphite'
-                    )}
-                  >
-                    {f.label}
-                  </button>
-                ))}
+          <Reveal>
+            <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="h-8 w-1.5 rounded-full bg-lime-mark" />
+                <div>
+                  <h2 className="text-3xl font-bold tracking-tight text-graphite sm:text-4xl">
+                    Encuentra tu cancha
+                  </h2>
+                  <p className="mt-0.5 text-sm text-slate-6">
+                    {stats.sucursales} sucursales en Guadalajara. Abre una para ver sus canchas.
+                  </p>
+                </div>
               </div>
 
               {zonas.length > 0 && (
@@ -401,95 +550,123 @@ export default function PublicHome({
                 </Select>
               )}
             </div>
-          </div>
+          </Reveal>
 
-          <div className="space-y-10">
+          <div className="space-y-3">
             {filteredLocations.length === 0 && (
-              <p className="text-sm text-slate-6">No hay espacios disponibles con esos filtros.</p>
+              <p className="text-sm text-slate-6">No hay sucursales en esa zona.</p>
             )}
-
-            {filteredLocations.map((loc) => (
-              <section key={loc.id}>
-                <div className="mb-4">
-                  <h3 className="text-xl font-bold tracking-tight text-graphite">{loc.name}</h3>
-                  <p className="mt-0.5 flex items-center gap-1 text-sm text-slate-6">
-                    <MapPin className="size-3.5 shrink-0" /> {loc.address}
-                    {loc.zona ? ` · ${loc.zona}` : ''}
-                  </p>
-                </div>
-                <div className="grid grid-cols-2 gap-x-5 gap-y-8 md:grid-cols-3 xl:grid-cols-4">
-                  {loc.spaces.map((s) => (
-                    <SpaceCard key={s.id} space={s} />
-                  ))}
-                </div>
-              </section>
+            {filteredLocations.map((loc, i) => (
+              <Reveal key={loc.id} delay={i * 60}>
+                <LocationRow loc={loc} defaultOpen={i === 0} />
+              </Reveal>
             ))}
           </div>
         </div>
 
+        {/* Community gallery */}
+        <section>
+          <Reveal>
+            <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="h-8 w-1.5 rounded-full bg-flame" />
+                <div>
+                  <h2 className="text-3xl font-bold tracking-tight text-graphite sm:text-4xl">
+                    Momentos de la comunidad
+                  </h2>
+                  <p className="mt-0.5 text-sm text-slate-6">
+                    Toca cualquier foto para verla en grande.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Reveal>
+          <Reveal delay={80}>
+            <CommunityGallery photos={COMMUNITY_PHOTOS} />
+          </Reveal>
+        </section>
+
         {/* Leagues teaser */}
         {leagues.length > 0 && (
-          <section>
-            <div className="mb-5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="h-8 w-1.5 rounded-full bg-electric" />
-                <h2 className="text-3xl font-bold tracking-tight text-graphite">Ligas</h2>
-              </div>
-              <Link
-                href="/ligas"
-                className="inline-flex items-center gap-1 text-sm font-semibold text-lime-deep hover:underline"
-              >
-                Ver todas <ArrowRight className="size-4" />
-              </Link>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {leagues.slice(0, 8).map((l) => (
-                <Link key={l.id} href={`/ligas/${l.id}`}>
-                  <Card className="flex items-center gap-3 p-4 transition-all hover:-translate-y-0.5 hover:shadow-md">
-                    <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-lime-mark/20 text-lime-deep">
-                      <Trophy className="size-5" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-graphite">{l.name}</p>
-                      <p className="truncate text-sm text-slate-6">
-                        {l.locationName} · {l.teamsCount} equipos
-                      </p>
-                    </div>
-                  </Card>
+          <Reveal>
+            <section>
+              <div className="mb-5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="h-8 w-1.5 rounded-full bg-electric" />
+                  <h2 className="text-3xl font-bold tracking-tight text-graphite sm:text-4xl">
+                    Ligas
+                  </h2>
+                </div>
+                <Link
+                  href="/ligas"
+                  className="inline-flex items-center gap-1 text-sm font-semibold text-lime-deep hover:underline"
+                >
+                  Ver todas <ArrowRight className="size-4" />
                 </Link>
-              ))}
-            </div>
-          </section>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {leagues.slice(0, 8).map((l) => (
+                  <Link key={l.id} href={`/ligas/${l.id}`}>
+                    <Card className="flex items-center gap-3 p-4 transition-all duration-300 [transition-timing-function:var(--ease-quart)] hover:-translate-y-1 hover:shadow-md">
+                      <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-lime-mark/20 text-lime-deep">
+                        <Trophy className="size-5" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-graphite">{l.name}</p>
+                        <p className="truncate text-sm text-slate-6">
+                          {l.locationName} · {l.teamsCount} equipos
+                        </p>
+                      </div>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          </Reveal>
         )}
 
         {/* Pilot + lead capture */}
         <section ref={leadRef} className="scroll-mt-24">
-          <Card className="overflow-hidden">
-            <div className="grid lg:grid-cols-2">
-              <div className="brand-gradient p-8 text-chalk sm:p-12">
-                <span className="inline-flex items-center rounded-full bg-lime-mark/20 px-3 py-1 text-xs font-bold uppercase tracking-wide text-lime-mark">
-                  Caso piloto
-                </span>
-                <h2 className="mt-5 text-3xl font-bold tracking-tight">
-                  Shoot Out, nuestra cancha piloto
-                </h2>
-                <p className="mt-4 text-chalk/75">
-                  Shoot Out opera desde 2021 con reservas, torneos y comunidad futbolera. Arranca en
-                  Futhub con <span className="font-semibold text-chalk">3 sucursales</span>: Centro,
-                  Norte y Sur.
-                </p>
-                <p className="mt-6 text-sm text-chalk/60">
-                  ¿Tienes una cancha o quieres empezar a jugar? Déjanos tus datos y te contactamos.
-                </p>
+          <Reveal>
+            <Card className="overflow-hidden">
+              <div className="grid lg:grid-cols-2">
+                <div className="relative isolate overflow-hidden p-8 text-chalk sm:p-12">
+                  <img
+                    src={COMMUNITY_PHOTOS[4].src}
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 -z-20 size-full object-cover"
+                  />
+                  <div className="brand-gradient absolute inset-0 -z-10 opacity-90" />
+                  <span className="inline-flex items-center rounded-full bg-lime-mark/20 px-3 py-1 text-xs font-bold uppercase tracking-wide text-lime-mark ring-1 ring-lime-mark/30">
+                    Caso piloto
+                  </span>
+                  <h2 className="mt-5 text-3xl font-bold tracking-tight sm:text-4xl">
+                    Shoot Out, nuestra cancha piloto
+                  </h2>
+                  <p className="mt-4 text-chalk/80">
+                    Shoot Out opera desde 2021 con reservas, torneos y comunidad futbolera. Arranca
+                    en Futhub con <span className="font-semibold text-chalk">3 sucursales</span>:
+                    Centro, Norte y Sur.
+                  </p>
+                  <p className="mt-6 text-sm text-chalk/65">
+                    ¿Tienes una cancha o quieres empezar a jugar? Déjanos tus datos y te
+                    contactamos.
+                  </p>
+                </div>
+                <div className="p-8 sm:p-12">
+                  <span className="text-xs font-bold uppercase tracking-[0.16em] text-slate-6">
+                    Súmate
+                  </span>
+                  <h3 className="mt-2 text-2xl font-bold tracking-tight text-graphite">
+                    Déjanos tus datos
+                  </h3>
+                  <p className="mb-6 mt-1 text-sm text-slate-6">Te contactamos en menos de 24 h.</p>
+                  <LeadForm key={leadType} initialType={leadType} />
+                </div>
               </div>
-              <div className="p-8 sm:p-12">
-                <h3 className="mb-5 text-lg font-bold tracking-tight text-graphite">
-                  Déjanos tus datos
-                </h3>
-                <LeadForm key={leadType} initialType={leadType} />
-              </div>
-            </div>
-          </Card>
+            </Card>
+          </Reveal>
         </section>
       </div>
     </>

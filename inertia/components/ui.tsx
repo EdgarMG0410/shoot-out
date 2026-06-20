@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { usePage } from '@inertiajs/react'
 import { sileo, Toaster } from 'sileo'
 import { ImageOff, X } from 'lucide-react'
@@ -224,9 +225,9 @@ export function Dialog({
 
   if (!open) return null
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
-      <div className="absolute inset-0 bg-graphite/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-graphite/50 backdrop-blur-md" onClick={onClose} />
       <div className="relative w-full max-w-lg rounded-3xl border border-bone-3 bg-chalk p-6 shadow-[0_24px_60px_-15px_oklch(20%_0.01_250/0.35)]">
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
@@ -239,7 +240,8 @@ export function Dialog({
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

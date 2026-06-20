@@ -27,6 +27,37 @@ export default class DashboardController {
       .orderBy('created_at', 'desc')
       .limit(8)
 
+    // ---- Tendencia de actividad (últimos 14 días) ----
+    const TREND_DAYS = 14
+    const trendStart = DateTime.now()
+      .startOf('day')
+      .minus({ days: TREND_DAYS - 1 })
+    const trendRows = await Booking.query().where('created_at', '>=', trendStart.toSQLDate()!)
+
+    const byDay = new Map<string, { bookings: number; revenue: number }>()
+    for (let i = 0; i < TREND_DAYS; i++) {
+      byDay.set(trendStart.plus({ days: i }).toISODate()!, { bookings: 0, revenue: 0 })
+    }
+    for (const b of trendRows) {
+      const key = b.createdAt?.toISODate()
+      const slot = key ? byDay.get(key) : undefined
+      if (!slot) continue
+      slot.bookings += 1
+      if (b.status !== 'cancelled') slot.revenue += b.totalPrice
+    }
+    const timeseries = [...byDay.entries()].map(([date, v]) => ({
+      date,
+      bookings: v.bookings,
+      revenue: Number(v.revenue.toFixed(2)),
+    }))
+
+    // ---- Desglose de reservas por estado ----
+    const statusRows = await Booking.query().select('status').count('* as c').groupBy('status')
+    const byStatus = statusRows.map((r) => ({
+      status: r.status as string,
+      count: count(r),
+    }))
+
     // ---- Ocupación simple (próximos 7 días) ----
     const svc = new BookingService()
     const start = DateTime.now().startOf('day')
@@ -97,6 +128,8 @@ export default class DashboardController {
           totalAvailable > 0 ? Number(((totalBooked / totalAvailable) * 100).toFixed(0)) : 0,
         spaces: reportSpaces,
       },
+      timeseries,
+      byStatus,
     })
   }
 }

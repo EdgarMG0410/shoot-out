@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import DashboardLayout from '~/layouts/dashboard'
 import { Card, StatusPill } from '~/components/ui'
+import { AreaChart, Donut, RadialGauge } from '~/components/charts'
 import { formatDate, formatNumber, money, timeRange } from '~/lib/format'
 
 type Stats = {
@@ -50,6 +51,23 @@ type Report = {
   }[]
 }
 
+type TrendPoint = { date: string; bookings: number; revenue: number }
+type StatusSlice = { status: string; count: number }
+
+const STATUS_META: Record<string, { label: string; color: string }> = {
+  confirmed: { label: 'Confirmadas', color: 'oklch(62% 0.15 158)' },
+  pending: { label: 'Pendientes', color: 'oklch(80% 0.13 80)' },
+  cancelled: { label: 'Canceladas', color: 'oklch(63% 0.2 18)' },
+}
+
+function shortDay(iso: string): string {
+  const d = new Date(`${iso}T00:00:00`)
+  if (Number.isNaN(d.getTime())) return iso
+  return new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(d)
+}
+
+/* ------------------------------- Stat card ------------------------------- */
+
 function StatCard({
   icon: Icon,
   label,
@@ -62,37 +80,102 @@ function StatCard({
   accent?: boolean
 }) {
   return (
-    <Card className={accent ? 'border-lime-mark bg-lime-mark p-5' : 'p-5'}>
+    <Card
+      className={
+        accent
+          ? 'group p-5 ring-1 ring-graphite/5 transition-shadow hover:shadow-md bg-graphite border-graphite'
+          : 'group p-5 transition-shadow hover:shadow-md'
+      }
+    >
       <span
         className={
           accent
-            ? 'flex size-9 items-center justify-center rounded-xl bg-graphite/10 text-graphite'
-            : 'flex size-9 items-center justify-center rounded-xl bg-bone-2 text-graphite'
+            ? 'flex size-9 items-center justify-center rounded-xl bg-chalk/10 text-chalk'
+            : 'flex size-9 items-center justify-center rounded-xl bg-bone-2 text-graphite transition-colors group-hover:bg-bone-3'
         }
       >
         <Icon className="size-[18px]" strokeWidth={1.85} />
       </span>
-      <p className="mt-4 text-xs font-medium uppercase tracking-wide text-graphite/60">{label}</p>
-      <p className="mt-1 text-[2rem] font-bold leading-none tracking-tight tabular-nums text-graphite">
+      <p
+        className={
+          accent
+            ? 'mt-4 text-xs font-medium uppercase tracking-wide text-chalk/55'
+            : 'mt-4 text-xs font-medium uppercase tracking-wide text-graphite/55'
+        }
+      >
+        {label}
+      </p>
+      <p
+        className={
+          accent
+            ? 'mt-1 text-[2rem] font-bold leading-none tracking-tight tabular-nums text-chalk'
+            : 'mt-1 text-[2rem] font-bold leading-none tracking-tight tabular-nums text-graphite'
+        }
+      >
         {value}
       </p>
     </Card>
   )
 }
 
+/* -------------------------------- Header --------------------------------- */
+
+function SectionHead({
+  title,
+  meta,
+  action,
+}: {
+  title: string
+  meta?: React.ReactNode
+  action?: React.ReactNode
+}) {
+  return (
+    <div className="mb-3 flex items-baseline justify-between gap-3">
+      <h2 className="text-base font-semibold text-graphite">{title}</h2>
+      {meta && <span className="text-sm text-slate-6">{meta}</span>}
+      {action}
+    </div>
+  )
+}
+
+/* --------------------------------- Page ---------------------------------- */
+
 export default function DashboardIndex({
   stats,
   recent,
   report,
+  timeseries,
+  byStatus,
 }: {
   stats: Stats
   recent: RecentBooking[]
   report: Report
+  timeseries: TrendPoint[]
+  byStatus: StatusSlice[]
 }) {
+  const trendBookings = timeseries.reduce((a, p) => a + p.bookings, 0)
+  const trendRevenue = timeseries.reduce((a, p) => a + p.revenue, 0)
+  const trendData = timeseries.map((p) => ({
+    label: shortDay(p.date),
+    value: p.bookings,
+    sub: money(p.revenue),
+  }))
+
+  const statusTotal = byStatus.reduce((a, s) => a + s.count, 0)
+  const segments = byStatus
+    .filter((s) => STATUS_META[s.status])
+    .map((s) => ({
+      key: s.status,
+      label: STATUS_META[s.status].label,
+      value: s.count,
+      color: STATUS_META[s.status].color,
+    }))
+
   return (
     <>
       <Head title="Resumen" />
-      <div className="space-y-8">
+      <div className="space-y-6">
+        {/* Stats */}
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <StatCard icon={TrendingUp} label="Ingresos" value={money(stats.revenue)} accent />
           <StatCard
@@ -114,64 +197,118 @@ export default function DashboardIndex({
           <StatCard icon={Users} label="Rentadores" value={formatNumber(stats.renters)} />
         </section>
 
-        <section>
-          <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="text-base font-semibold text-graphite">
-              Ocupación · próximos {report.days} días
-            </h2>
-            <span className="text-sm text-slate-6">
-              {formatDate(report.rangeStart)} – {formatDate(report.rangeEnd)}
-            </span>
-          </div>
-          <Card className="p-5">
-            <div className="mb-5 flex flex-wrap gap-x-10 gap-y-3">
+        {/* Trend + occupancy gauge */}
+        <section className="grid gap-4 lg:grid-cols-3">
+          <Card className="p-5 lg:col-span-2">
+            <div className="mb-2 flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-graphite/60">
-                  Ocupación global
-                </p>
-                <p className="mt-1 text-[2rem] font-bold leading-none tabular-nums text-graphite">
-                  {report.occupancy}%
-                </p>
+                <h2 className="text-base font-semibold text-graphite">Actividad</h2>
+                <p className="text-sm text-slate-6">Reservas por día · últimos 14 días</p>
               </div>
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-graphite/60">
-                  Horas reservadas
+              <div className="text-right">
+                <p className="text-2xl font-bold leading-none tabular-nums text-graphite">
+                  {formatNumber(trendBookings)}
                 </p>
-                <p className="mt-1 text-[2rem] font-bold leading-none tabular-nums text-graphite">
-                  {formatNumber(report.bookedHours)}
-                  <span className="text-base font-medium text-slate-6">
-                    {' '}
-                    / {formatNumber(report.availableHours)} h
-                  </span>
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-graphite/60">
-                  Reservas en el periodo
-                </p>
-                <p className="mt-1 text-[2rem] font-bold leading-none tabular-nums text-graphite">
-                  {formatNumber(report.bookingsCount)}
-                </p>
+                <p className="mt-1 text-xs text-slate-6">reservas · {money(trendRevenue)}</p>
               </div>
             </div>
+            <div className="-mx-1">
+              <AreaChart
+                data={trendData}
+                height={252}
+                unit="reservas"
+                ariaLabel="Reservas por día en los últimos 14 días"
+              />
+            </div>
+          </Card>
 
-            {report.spaces.length === 0 ? (
-              <p className="py-6 text-center text-sm text-slate-6">No hay espacios activos.</p>
+          <Card className="flex flex-col p-5">
+            <h2 className="text-base font-semibold text-graphite">Ocupación</h2>
+            <p className="text-sm text-slate-6">Próximos {report.days} días</p>
+            <div className="flex flex-1 items-center justify-center py-4">
+              <RadialGauge value={report.occupancy} caption="global" />
+            </div>
+            <dl className="grid grid-cols-2 gap-3 border-t border-bone-3 pt-4">
+              <div>
+                <dt className="text-xs text-slate-6">Horas reservadas</dt>
+                <dd className="mt-0.5 text-lg font-bold tabular-nums text-graphite">
+                  {formatNumber(report.bookedHours)}
+                  <span className="text-xs font-medium text-slate-6">
+                    {' '}
+                    / {formatNumber(report.availableHours)}h
+                  </span>
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-slate-6">Reservas periodo</dt>
+                <dd className="mt-0.5 text-lg font-bold tabular-nums text-graphite">
+                  {formatNumber(report.bookingsCount)}
+                </dd>
+              </div>
+            </dl>
+          </Card>
+        </section>
+
+        {/* Status breakdown + per-space occupancy */}
+        <section className="grid gap-4 lg:grid-cols-3">
+          <Card className="p-5">
+            <h2 className="text-base font-semibold text-graphite">Reservas por estado</h2>
+            <p className="text-sm text-slate-6">Distribución histórica</p>
+            {statusTotal === 0 ? (
+              <p className="py-10 text-center text-sm text-slate-6">Aún no hay reservas.</p>
             ) : (
-              <ul className="flex flex-col gap-3">
+              <div className="mt-4 flex items-center gap-5">
+                <Donut
+                  segments={segments}
+                  centerValue={formatNumber(statusTotal)}
+                  centerLabel="total"
+                />
+                <ul className="flex-1 space-y-2.5">
+                  {segments.map((s) => {
+                    const pct = statusTotal > 0 ? Math.round((s.value / statusTotal) * 100) : 0
+                    return (
+                      <li key={s.key} className="flex items-center gap-2.5 text-sm">
+                        <span
+                          className="size-2.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: s.color }}
+                        />
+                        <span className="flex-1 text-slate-6">{s.label}</span>
+                        <span className="font-semibold tabular-nums text-graphite">{s.value}</span>
+                        <span className="w-9 text-right text-xs tabular-nums text-slate-6">
+                          {pct}%
+                        </span>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            )}
+          </Card>
+
+          <Card className="p-5 lg:col-span-2">
+            <div className="mb-4 flex items-baseline justify-between gap-3">
+              <h2 className="text-base font-semibold text-graphite">Ocupación por espacio</h2>
+              <span className="text-sm text-slate-6">
+                {formatDate(report.rangeStart)} – {formatDate(report.rangeEnd)}
+              </span>
+            </div>
+            {report.spaces.length === 0 ? (
+              <p className="py-8 text-center text-sm text-slate-6">No hay espacios activos.</p>
+            ) : (
+              <ul className="flex flex-col gap-3.5">
                 {report.spaces.map((s) => (
                   <li key={s.id} className="flex items-center gap-3">
-                    <div className="w-44 shrink-0">
+                    <div className="w-40 shrink-0">
                       <p className="truncate text-sm font-medium text-graphite">{s.name}</p>
                       <p className="truncate text-xs text-slate-6">{s.locationName}</p>
                     </div>
                     <div className="h-2.5 grow overflow-hidden rounded-full bg-bone-2">
                       <div
-                        className="h-full rounded-full bg-lime-mark"
+                        className="h-full rounded-full bg-graphite transition-[width] duration-700 ease-out"
                         style={{ width: `${Math.max(2, s.occupancy)}%` }}
                       />
                     </div>
-                    <span className="w-28 shrink-0 text-right text-sm tabular-nums text-slate-6">
+                    <span className="w-24 shrink-0 text-right text-sm tabular-nums text-slate-6">
                       {s.occupancy}% · {formatNumber(s.bookedHours)}h
                     </span>
                   </li>
@@ -181,17 +318,19 @@ export default function DashboardIndex({
           </Card>
         </section>
 
+        {/* Recent bookings */}
         <section>
-          <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="text-base font-semibold text-graphite">Reservas recientes</h2>
-            <Link
-              href="/dashboard/bookings"
-              className="text-sm font-medium text-slate-6 transition-colors hover:text-graphite"
-            >
-              Ver todas →
-            </Link>
-          </div>
-
+          <SectionHead
+            title="Reservas recientes"
+            action={
+              <Link
+                href="/dashboard/bookings"
+                className="ml-auto text-sm font-medium text-slate-6 transition-colors hover:text-graphite"
+              >
+                Ver todas →
+              </Link>
+            }
+          />
           <Card className="overflow-hidden">
             {recent.length === 0 ? (
               <p className="px-5 py-12 text-center text-sm text-slate-6">Aún no hay reservas.</p>
@@ -199,7 +338,7 @@ export default function DashboardIndex({
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-bone-3 text-left text-xs font-medium uppercase tracking-wide text-slate-6">
+                    <tr className="border-b border-bone-3 bg-bone-1/40 text-left text-xs font-medium uppercase tracking-wide text-slate-6">
                       <th className="px-5 py-3">Espacio</th>
                       <th className="px-5 py-3">Rentador</th>
                       <th className="px-5 py-3">Fecha</th>
@@ -210,7 +349,10 @@ export default function DashboardIndex({
                   </thead>
                   <tbody>
                     {recent.map((b) => (
-                      <tr key={b.id} className="border-b border-bone-2 last:border-0">
+                      <tr
+                        key={b.id}
+                        className="border-b border-bone-2 transition-colors last:border-0 hover:bg-bone-1/50"
+                      >
                         <td className="px-5 py-3 font-medium text-graphite">{b.space}</td>
                         <td className="px-5 py-3 text-slate-6">{b.user}</td>
                         <td className="px-5 py-3 text-slate-6">{formatDate(b.date)}</td>
