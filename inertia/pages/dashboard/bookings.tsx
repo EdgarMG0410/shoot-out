@@ -56,8 +56,40 @@ export default function Bookings({ bookings, filter }: { bookings: BookingRow[];
           {bookings.length === 0 ? (
             <p className="px-5 py-12 text-center text-sm text-slate-6">No hay reservas aquí.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <>
+              {/* Mobile cards — no lateral scroll */}
+              <div className="space-y-3 p-3 md:hidden">
+                {bookings.map((b) => (
+                  <div key={b.id} className="rounded-2xl border border-bone-3 bg-bone-1/40 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-graphite">{b.space}</p>
+                        <p className="truncate text-sm text-slate-6">{b.user}</p>
+                      </div>
+                      <StatusPill status={b.status} />
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-6">
+                      <span>{formatDate(b.date)}</span>
+                      <span className="tabular-nums">{timeRange(b.startTime, b.endTime)}</span>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between border-t border-bone-2 pt-3">
+                      {b.paid ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-mark">
+                          <Check className="size-3.5" /> {b.method}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-6">Sin pago</span>
+                      )}
+                      <span className="font-semibold tabular-nums text-graphite">
+                        {money(b.totalPrice)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop table */}
+              <table className="hidden w-full text-sm md:table">
                 <thead>
                   <tr className="border-b border-bone-3 text-left text-xs font-medium uppercase tracking-wide text-slate-6">
                     <th className="px-5 py-3">#</th>
@@ -101,7 +133,7 @@ export default function Bookings({ bookings, filter }: { bookings: BookingRow[];
                   ))}
                 </tbody>
               </table>
-            </div>
+            </>
           )}
         </Card>
       </div>

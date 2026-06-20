@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Head, Link } from '@inertiajs/react'
-import { ArrowLeft, Clock, MapPin, Trophy } from 'lucide-react'
+import { ArrowLeft, MapPin, Trophy } from 'lucide-react'
 import PublicLayout from '~/layouts/public'
 import { Card, EmptyState } from '~/components/ui'
 import { cn } from '~/lib/utils'
@@ -49,7 +49,7 @@ const MATCH_STATUS: Record<MatchStatus, { label: string; cls: string }> = {
   cancelled: { label: 'Cancelado', cls: 'bg-rose-mark/15 text-rose-mark' },
 }
 
-type Tab = 'tabla' | 'calendario'
+type Tab = 'tabla' | 'jornadas'
 
 export default function PublicLeague({
   league,
@@ -67,6 +67,19 @@ export default function PublicLeague({
   const [tab, setTab] = useState<Tab>('tabla')
   const hasPlayed = standings.some((s) => s.played > 0)
 
+  // Group fixtures into jornadas by match date (chronological).
+  const jornadas = useMemo(() => {
+    const byDate = new Map<string, Match[]>()
+    for (const m of matches) {
+      const arr = byDate.get(m.date) ?? []
+      arr.push(m)
+      byDate.set(m.date, arr)
+    }
+    return [...byDate.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([date, ms], i) => ({ n: i + 1, date, matches: ms }))
+  }, [matches])
+
   return (
     <>
       <Head title={league.name} />
@@ -80,7 +93,7 @@ export default function PublicLeague({
 
       <Card className="mb-5 p-5 sm:p-6">
         <div className="flex items-center gap-2">
-          <Trophy className="size-5 text-lime-deep" />
+          <Trophy className="size-5 text-graphite" />
           <h1 className="text-xl font-semibold tracking-tight text-graphite">{league.name}</h1>
         </div>
         {league.description && <p className="mt-1 text-sm text-slate-6">{league.description}</p>}
@@ -98,7 +111,7 @@ export default function PublicLeague({
       </Card>
 
       <div className="mb-6 inline-flex gap-1 rounded-2xl bg-bone-2 p-1">
-        {(['tabla', 'calendario'] as Tab[]).map((t) => (
+        {(['tabla', 'jornadas'] as Tab[]).map((t) => (
           <button
             key={t}
             type="button"
@@ -119,17 +132,17 @@ export default function PublicLeague({
             <div className="border-b border-bone-3 px-5 py-4">
               <h2 className="text-sm font-semibold text-graphite">Tabla de posiciones</h2>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div>
+              <table className="w-full table-fixed text-sm sm:table-auto">
                 <thead>
                   <tr className="border-b border-bone-3 text-left text-xs font-medium uppercase tracking-wide text-slate-6">
                     <th className="py-3 pl-5 pr-2 font-medium">#</th>
                     <th className="py-3 pr-4 font-medium">Equipo</th>
-                    <th className="px-3 py-3 text-center font-medium">PJ</th>
-                    <th className="px-3 py-3 text-center font-medium">G</th>
-                    <th className="px-3 py-3 text-center font-medium">E</th>
-                    <th className="px-3 py-3 text-center font-medium">P</th>
-                    <th className="px-3 py-3 text-center font-medium">DIF</th>
+                    <th className="px-1.5 py-3 text-center font-medium sm:px-3">PJ</th>
+                    <th className="px-1.5 py-3 text-center font-medium sm:px-3">G</th>
+                    <th className="px-1.5 py-3 text-center font-medium sm:px-3">E</th>
+                    <th className="px-1.5 py-3 text-center font-medium sm:px-3">P</th>
+                    <th className="px-1.5 py-3 text-center font-medium sm:px-3">DIF</th>
                     <th className="py-3 pl-3 pr-5 text-center font-bold text-graphite">PTS</th>
                   </tr>
                 </thead>
@@ -147,26 +160,26 @@ export default function PublicLeague({
                           <span
                             className={cn(
                               'inline-flex size-6 items-center justify-center rounded-full text-xs font-semibold tabular-nums',
-                              i < 3 ? 'bg-lime-mark/30 text-graphite' : 'text-slate-6'
+                              i < 3 ? 'bg-graphite text-chalk' : 'text-slate-6'
                             )}
                           >
                             {i + 1}
                           </span>
                         </td>
-                        <td className="py-3.5 pr-4 font-medium text-graphite">{s.team}</td>
-                        <td className="px-3 py-3.5 text-center tabular-nums text-slate-6">
+                        <td className="truncate py-3.5 pr-3 font-medium text-graphite">{s.team}</td>
+                        <td className="px-1.5 py-3.5 text-center sm:px-3 tabular-nums text-slate-6">
                           {s.played}
                         </td>
-                        <td className="px-3 py-3.5 text-center tabular-nums text-slate-6">
+                        <td className="px-1.5 py-3.5 text-center sm:px-3 tabular-nums text-slate-6">
                           {s.won}
                         </td>
-                        <td className="px-3 py-3.5 text-center tabular-nums text-slate-6">
+                        <td className="px-1.5 py-3.5 text-center sm:px-3 tabular-nums text-slate-6">
                           {s.drawn}
                         </td>
-                        <td className="px-3 py-3.5 text-center tabular-nums text-slate-6">
+                        <td className="px-1.5 py-3.5 text-center sm:px-3 tabular-nums text-slate-6">
                           {s.lost}
                         </td>
-                        <td className="px-3 py-3.5 text-center tabular-nums text-slate-6">
+                        <td className="px-1.5 py-3.5 text-center sm:px-3 tabular-nums text-slate-6">
                           {s.goalDiff > 0 ? `+${s.goalDiff}` : s.goalDiff}
                         </td>
                         <td className="py-3.5 pl-3 pr-5 text-center font-bold tabular-nums text-graphite">
@@ -183,7 +196,7 @@ export default function PublicLeague({
           {hasPlayed && (
             <div className="grid gap-6 lg:grid-cols-2">
               <Card className="p-6">
-                <h2 className="mb-4 text-sm font-semibold text-graphite">⚽ Goleadores</h2>
+                <h2 className="mb-4 text-sm font-semibold text-graphite">Goleadores</h2>
                 {scorers.length === 0 ? (
                   <p className="text-sm text-slate-6">Sin goles aún.</p>
                 ) : (
@@ -213,8 +226,18 @@ export default function PublicLeague({
                         <span className="flex-1 truncate text-graphite">
                           {c.player} <span className="text-slate-6">· {c.team}</span>
                         </span>
-                        {c.yellow > 0 && <span className="tabular-nums">🟨 {c.yellow}</span>}
-                        {c.red > 0 && <span className="tabular-nums">🟥 {c.red}</span>}
+                        {c.yellow > 0 && (
+                          <span className="inline-flex items-center gap-1 tabular-nums text-slate-6">
+                            <span className="inline-block h-3.5 w-2.5 rounded-[2px] bg-amber-mark" />
+                            {c.yellow}
+                          </span>
+                        )}
+                        {c.red > 0 && (
+                          <span className="inline-flex items-center gap-1 tabular-nums text-slate-6">
+                            <span className="inline-block h-3.5 w-2.5 rounded-[2px] bg-rose-mark" />
+                            {c.red}
+                          </span>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -225,40 +248,90 @@ export default function PublicLeague({
         </div>
       )}
 
-      {tab === 'calendario' && (
-        <div className="space-y-4">
+      {tab === 'jornadas' && (
+        <div className="space-y-8">
           {matches.length === 0 ? (
             <EmptyState title="Sin partidos" hint="El calendario aún no está disponible." />
           ) : (
-            matches.map((m) => (
-              <Card key={m.id} className="p-5">
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-6">
-                  <span className="font-medium text-graphite">{formatDate(m.date)}</span>
-                  <span className="inline-flex items-center gap-1">
-                    <Clock className="size-3.5" /> {timeRange(m.startTime, m.endTime)}
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <MapPin className="size-3.5" /> {m.spaceName}
-                  </span>
-                  <span
-                    className={cn(
-                      'inline-flex h-5 items-center rounded-md px-2 text-[11px] font-semibold',
-                      MATCH_STATUS[m.status].cls
-                    )}
-                  >
-                    {MATCH_STATUS[m.status].label}
-                  </span>
+            jornadas.map((j) => (
+              <section key={j.n}>
+                <div className="mb-3 flex items-baseline gap-3">
+                  <h2 className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-slate-6">
+                    Jornada {j.n}
+                  </h2>
+                  <span className="text-sm text-slate-6">{formatDate(j.date)}</span>
                 </div>
-                <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-5">
-                  <span className="truncate text-right font-semibold text-graphite">
-                    {m.homeTeam}
-                  </span>
-                  <span className="rounded-xl bg-bone-2 px-4 py-1.5 text-lg font-bold tabular-nums text-graphite">
-                    {m.homeGoals}–{m.awayGoals}
-                  </span>
-                  <span className="truncate font-semibold text-graphite">{m.awayTeam}</span>
+                <div className="space-y-3">
+                  {j.matches.map((m) => (
+                    <Card key={m.id} className="p-5">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-mono text-xs font-medium uppercase tracking-wide text-slate-6">
+                          {formatDate(m.date)} · {m.startTime}
+                        </p>
+                        <span
+                          className={cn(
+                            'inline-flex h-6 items-center rounded-full px-2.5 text-[11px] font-semibold',
+                            MATCH_STATUS[m.status].cls
+                          )}
+                        >
+                          {MATCH_STATUS[m.status].label}
+                        </span>
+                      </div>
+
+                      <div className="mt-4 space-y-2">
+                        <div className="flex items-center justify-between gap-3">
+                          <span
+                            className={cn(
+                              'truncate font-display text-2xl font-bold uppercase tracking-tight sm:text-3xl',
+                              m.status === 'played' && m.awayGoals > m.homeGoals
+                                ? 'text-slate-6'
+                                : 'text-graphite'
+                            )}
+                          >
+                            {m.homeTeam}
+                          </span>
+                          {m.status === 'played' && (
+                            <span className="shrink-0 font-display text-2xl font-bold tabular-nums text-graphite sm:text-3xl">
+                              {m.homeGoals}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="font-mono text-sm font-bold uppercase text-rose-mark">
+                            vs
+                          </span>
+                          <span className="h-px flex-1 bg-bone-3" />
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <span
+                            className={cn(
+                              'truncate font-display text-2xl font-bold uppercase tracking-tight sm:text-3xl',
+                              m.status === 'played' && m.homeGoals > m.awayGoals
+                                ? 'text-slate-6'
+                                : 'text-graphite'
+                            )}
+                          >
+                            {m.awayTeam}
+                          </span>
+                          {m.status === 'played' && (
+                            <span className="shrink-0 font-display text-2xl font-bold tabular-nums text-graphite sm:text-3xl">
+                              {m.awayGoals}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex items-center gap-2 border-t border-bone-2 pt-3 text-sm text-slate-6">
+                        <MapPin className="size-4 shrink-0" />
+                        <span className="flex-1 truncate">{m.spaceName}</span>
+                        <span className="font-mono text-xs tabular-nums">
+                          {timeRange(m.startTime, m.endTime)}
+                        </span>
+                      </div>
+                    </Card>
+                  ))}
                 </div>
-              </Card>
+              </section>
             ))
           )}
         </div>

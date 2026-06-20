@@ -48,7 +48,7 @@ export default function Solicitudes({ leads, counts }: { leads: Lead[]; counts: 
     <>
       <Head title="Solicitudes" />
       <div className="space-y-6">
-        <section className="grid grid-cols-3 gap-4">
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Stat label="Total" value={counts.total} />
           <Stat label="Jugadores" value={counts.jugador} />
           <Stat label="Canchas" value={counts.cancha} />
@@ -61,8 +61,53 @@ export default function Solicitudes({ leads, counts }: { leads: Lead[]; counts: 
           />
         ) : (
           <Card className="overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <>
+              {/* Mobile cards — no lateral scroll */}
+              <div className="space-y-3 p-3 md:hidden">
+                {leads.map((l) => (
+                  <div key={l.id} className="rounded-2xl border border-bone-3 bg-bone-1/40 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="font-semibold text-graphite">{l.name}</p>
+                      <span
+                        className={cn(
+                          'inline-flex h-6 items-center rounded-full px-2.5 text-xs font-semibold',
+                          l.type === 'cancha' ? 'bg-graphite text-chalk' : 'bg-bone-2 text-graphite'
+                        )}
+                      >
+                        {TYPE_LABEL[l.type] ?? l.type}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex flex-col gap-1 text-sm">
+                      <a
+                        href={`mailto:${l.email}`}
+                        className="inline-flex items-center gap-1.5 text-slate-6 hover:text-graphite"
+                      >
+                        <Mail className="size-3.5 shrink-0" /> {l.email}
+                      </a>
+                      {l.phone && (
+                        <a
+                          href={waLink(l.phone)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-slate-6 hover:text-lime-deep"
+                        >
+                          <Phone className="size-3.5 shrink-0" /> {l.phone}
+                        </a>
+                      )}
+                    </div>
+                    {l.contactMedium && (
+                      <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-slate-6">
+                        <MessageCircle className="size-3.5" /> {l.contactMedium}
+                      </p>
+                    )}
+                    {l.message && <p className="mt-2 text-sm text-slate-6">{l.message}</p>}
+                    <p className="mt-2 text-xs tabular-nums text-slate-6">{when(l.createdAt)}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop table */}
+              <table className="hidden w-full text-sm md:table">
                 <thead>
                   <tr className="border-b border-bone-3 bg-bone-1/40 text-left font-mono text-xs font-bold uppercase tracking-[0.12em] text-slate-6">
                     <th className="px-5 py-3">Nombre</th>
@@ -129,7 +174,7 @@ export default function Solicitudes({ leads, counts }: { leads: Lead[]; counts: 
                   ))}
                 </tbody>
               </table>
-            </div>
+            </>
           </Card>
         )}
       </div>

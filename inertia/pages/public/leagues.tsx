@@ -24,7 +24,7 @@ export default function PublicLeagues({ leagues }: { leagues: LeagueRow[] }) {
       {leagues.length === 0 ? (
         <EmptyState title="Aún no hay ligas" hint="Pronto habrá torneos disponibles." />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {leagues.map((l) => (
             <Link key={l.id} href={`/ligas/${l.id}`} className="block">
               <Card className="flex flex-col p-5 transition-colors hover:bg-bone-1 sm:p-6">

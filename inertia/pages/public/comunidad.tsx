@@ -626,7 +626,7 @@ export default function Comunidad({
             }
           />
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {matches.map((m) => (
               <MatchCard key={m.id} m={m} onJoin={setJoining} />
             ))}
@@ -640,7 +640,7 @@ export default function Comunidad({
             hint="Crea tu perfil para que los equipos te encuentren."
           />
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {players.map((p) => (
               <PlayerCard key={p.id} p={p} />
             ))}
@@ -654,7 +654,7 @@ export default function Comunidad({
             hint="Publica tu convocatoria y recluta refuerzos."
           />
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {recruitments.map((r) => (
               <RecruitmentCard key={r.id} r={r} />
             ))}

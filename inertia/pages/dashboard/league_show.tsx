@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Head, Link, router, useForm } from '@inertiajs/react'
-import { ArrowLeft, CalendarRange, Clock, MapPin, Pencil, Plus, Trash2, Trophy } from 'lucide-react'
+import { ArrowLeft, CalendarRange, MapPin, Pencil, Plus, Trash2, Trophy } from 'lucide-react'
 import DashboardLayout from '~/layouts/dashboard'
 import { Button, Card, Dialog, EmptyState, Field, Input, Select, Textarea } from '~/components/ui'
 import { ImageUpload } from '~/components/image-upload'
@@ -586,9 +586,14 @@ function GenerateFixturesDialog({
 }
 
 const EVENT_LABEL: Record<EventType, string> = {
-  goal: '⚽ Gol',
-  yellow: '🟨 Amarilla',
-  red: '🟥 Roja',
+  goal: 'Gol',
+  yellow: 'Amarilla',
+  red: 'Roja',
+}
+const EVENT_CLS: Record<EventType, string> = {
+  goal: 'bg-graphite text-chalk',
+  yellow: 'bg-amber-mark/20 text-graphite',
+  red: 'bg-rose-mark/15 text-rose-mark',
 }
 
 function MinutaDialog({
@@ -624,6 +629,12 @@ function MinutaDialog({
   }
   const removeEvent = (id: number) =>
     router.delete(`/dashboard/match-events/${id}`, { preserveScroll: true })
+  const quickGoal = (teamId: number) =>
+    router.post(
+      `/dashboard/matches/${match.id}/events`,
+      { teamId, playerId: null, type: 'goal', minute: null },
+      { preserveScroll: true }
+    )
 
   return (
     <Dialog
@@ -633,6 +644,33 @@ function MinutaDialog({
       description={`${formatDate(match.date)} · ${timeRange(match.startTime, match.endTime)} · ${match.spaceName}`}
     >
       <div className="flex flex-col gap-4">
+        {/* Marcador + gol rápido */}
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-2xl bg-bone-1 p-4">
+          <div className="text-right">
+            <p className="truncate text-sm font-semibold text-graphite">{match.homeTeam}</p>
+            <button
+              type="button"
+              onClick={() => quickGoal(match.homeTeamId)}
+              className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-lime-mark px-3 py-1 text-xs font-bold text-graphite transition-colors hover:bg-lime-deep"
+            >
+              <Plus className="size-3.5" /> Gol
+            </button>
+          </div>
+          <span className="rounded-xl bg-graphite px-4 py-2 text-2xl font-bold tabular-nums text-chalk">
+            {match.homeGoals}–{match.awayGoals}
+          </span>
+          <div>
+            <p className="truncate text-sm font-semibold text-graphite">{match.awayTeam}</p>
+            <button
+              type="button"
+              onClick={() => quickGoal(match.awayTeamId)}
+              className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-lime-mark px-3 py-1 text-xs font-bold text-graphite transition-colors hover:bg-lime-deep"
+            >
+              <Plus className="size-3.5" /> Gol
+            </button>
+          </div>
+        </div>
+
         <ul className="flex max-h-52 flex-col gap-1.5 overflow-y-auto">
           {match.events.length === 0 ? (
             <li className="text-sm text-slate-6">Sin eventos registrados.</li>
@@ -645,7 +683,14 @@ function MinutaDialog({
                 <span className="w-8 shrink-0 text-center tabular-nums text-slate-6">
                   {ev.minute != null ? `${ev.minute}'` : '—'}
                 </span>
-                <span className="shrink-0">{EVENT_LABEL[ev.type]}</span>
+                <span
+                  className={cn(
+                    'inline-flex h-5 shrink-0 items-center rounded-md px-1.5 text-[11px] font-semibold',
+                    EVENT_CLS[ev.type]
+                  )}
+                >
+                  {EVENT_LABEL[ev.type]}
+                </span>
                 <span className="flex-1 truncate text-graphite">
                   {ev.playerName ?? 'Sin asignar'}
                   <span className="text-slate-6">
@@ -684,9 +729,9 @@ function MinutaDialog({
                 value={form.data.type}
                 onChange={(e) => form.setData('type', e.target.value as EventType)}
               >
-                <option value="goal">⚽ Gol</option>
-                <option value="yellow">🟨 Amarilla</option>
-                <option value="red">🟥 Roja</option>
+                <option value="goal">Gol</option>
+                <option value="yellow">Amarilla</option>
+                <option value="red">Roja</option>
               </Select>
             </Field>
           </div>
@@ -995,17 +1040,13 @@ export default function LeagueShow({
             <div className="space-y-4">
               {matches.map((m) => (
                 <Card key={m.id} className="p-5">
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-6">
-                    <span className="font-medium text-graphite">{formatDate(m.date)}</span>
-                    <span className="inline-flex items-center gap-1">
-                      <Clock className="size-3.5" /> {timeRange(m.startTime, m.endTime)}
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <MapPin className="size-3.5" /> {m.spaceName}
-                    </span>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-mono text-xs font-medium uppercase tracking-wide text-slate-6">
+                      {formatDate(m.date)} · {m.startTime}
+                    </p>
                     <span
                       className={cn(
-                        'inline-flex h-5 items-center rounded-md px-2 text-[11px] font-semibold',
+                        'inline-flex h-6 items-center rounded-full px-2.5 text-[11px] font-semibold',
                         MATCH_STATUS[m.status].cls
                       )}
                     >
@@ -1013,17 +1054,52 @@ export default function LeagueShow({
                     </span>
                   </div>
 
-                  <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-5">
-                    <span className="truncate text-right font-semibold text-graphite">
-                      {m.homeTeam}
-                    </span>
-                    <span className="rounded-xl bg-bone-2 px-4 py-1.5 text-lg font-bold tabular-nums text-graphite">
-                      {m.homeGoals}–{m.awayGoals}
-                    </span>
-                    <span className="truncate font-semibold text-graphite">{m.awayTeam}</span>
+                  <div className="mt-4 space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <span
+                        className={cn(
+                          'truncate font-display text-xl font-bold uppercase tracking-tight sm:text-2xl',
+                          m.status === 'played' && m.awayGoals > m.homeGoals
+                            ? 'text-slate-6'
+                            : 'text-graphite'
+                        )}
+                      >
+                        {m.homeTeam}
+                      </span>
+                      {m.status === 'played' && (
+                        <span className="shrink-0 font-display text-xl font-bold tabular-nums text-graphite sm:text-2xl">
+                          {m.homeGoals}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono text-sm font-bold uppercase text-rose-mark">
+                        vs
+                      </span>
+                      <span className="h-px flex-1 bg-bone-3" />
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span
+                        className={cn(
+                          'truncate font-display text-xl font-bold uppercase tracking-tight sm:text-2xl',
+                          m.status === 'played' && m.homeGoals > m.awayGoals
+                            ? 'text-slate-6'
+                            : 'text-graphite'
+                        )}
+                      >
+                        {m.awayTeam}
+                      </span>
+                      {m.status === 'played' && (
+                        <span className="shrink-0 font-display text-xl font-bold tabular-nums text-graphite sm:text-2xl">
+                          {m.awayGoals}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="mt-4 flex items-center justify-end gap-2 border-t border-bone-2 pt-4">
+                  <div className="mt-4 flex items-center gap-2 border-t border-bone-2 pt-3 text-sm text-slate-6">
+                    <MapPin className="size-4 shrink-0" />
+                    <span className="flex-1 truncate">{m.spaceName}</span>
                     <Button variant="secondary" size="sm" onClick={() => setMinuta(m)}>
                       Minuta
                     </Button>
@@ -1065,7 +1141,7 @@ export default function LeagueShow({
           {teams.length === 0 ? (
             <EmptyState title="Sin equipos" hint="Agrega equipos y su roster de jugadores." />
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {teams.map((t) => (
                 <TeamCard key={t.id} team={t} onEdit={() => setTeamDialog(t)} />
               ))}
@@ -1105,7 +1181,7 @@ export default function LeagueShow({
       {minuta && (
         <MinutaDialog
           key={minuta.id}
-          match={minuta}
+          match={matches.find((m) => m.id === minuta.id) ?? minuta}
           teams={teams}
           onClose={() => setMinuta(null)}
         />

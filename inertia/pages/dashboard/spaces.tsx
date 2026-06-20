@@ -50,8 +50,51 @@ export default function Spaces({
         />
       ) : (
         <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <>
+            {/* Mobile cards — no lateral scroll */}
+            <div className="space-y-3 p-3 md:hidden">
+              {spaces.map((s) => (
+                <div key={s.id} className="rounded-2xl border border-bone-3 bg-bone-1/40 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-graphite">{s.name}</p>
+                      <p className="inline-flex items-center gap-1 truncate text-sm text-slate-6">
+                        <MapPin className="size-3 shrink-0" /> {s.locationName}
+                      </p>
+                    </div>
+                    <StatusPill status={s.status} />
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-6">
+                    <span>
+                      {TYPE_LABEL[s.type]}
+                      {s.type === 'cancha' && s.size ? ` ${s.size}` : ''}
+                      {s.type !== 'cancha' && s.capacity ? ` · ${s.capacity} pers.` : ''}
+                    </span>
+                    <span className="font-medium text-graphite">{money(s.pricePerHour)}/h</span>
+                    <span>{s.bookingsCount} reservas</span>
+                  </div>
+                  <div className="mt-3 flex items-center justify-end gap-1.5 border-t border-bone-2 pt-3">
+                    <Button variant="secondary" size="sm" onClick={() => setEditing(s)}>
+                      <Pencil className="size-3.5" /> Editar
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setBlocking(s)}>
+                      <Ban className="size-3.5" /> Bloquear
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="icon"
+                      onClick={() => remove(s)}
+                      aria-label="Eliminar"
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop table */}
+            <table className="hidden w-full text-sm md:table">
               <thead>
                 <tr className="border-b border-bone-3 text-left text-xs font-medium uppercase tracking-wide text-slate-6">
                   <th className="px-5 py-3">Espacio</th>
@@ -108,7 +151,7 @@ export default function Spaces({
                 ))}
               </tbody>
             </table>
-          </div>
+          </>
         </Card>
       )}
 

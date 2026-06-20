@@ -132,42 +132,48 @@ export default function Leagues({
 
   return (
     <>
-      <Head title="Ligas" />
+      <Head title="Torneos" />
       <div className="mb-5 flex justify-end">
         <Button variant="lime" onClick={() => setCreating(true)}>
-          <Plus /> Nueva liga
+          <Plus /> Nuevo torneo
         </Button>
       </div>
 
       {leagues.length === 0 ? (
         <EmptyState
-          title="Aún no hay ligas"
-          hint="Crea una liga para gestionar equipos, calendario y estadísticas."
+          title="Aún no hay torneos"
+          hint="Crea un torneo para gestionar equipos, calendario y estadísticas."
           action={
             <Button variant="lime" onClick={() => setCreating(true)}>
-              <Plus /> Nueva liga
+              <Plus /> Nuevo torneo
             </Button>
           }
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {leagues.map((l) => (
             <Card key={l.id} className="flex flex-col p-5 sm:p-6">
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <Trophy className="size-4 shrink-0 text-lime-deep" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Trophy className="size-4 shrink-0 text-graphite" />
                     <h3 className="truncate font-semibold text-graphite">{l.name}</h3>
-                    <StatusPill status={l.status === 'active' ? 'active' : 'inactive'} />
+                    <StatusPill
+                      status={l.status === 'active' ? 'active' : 'inactive'}
+                      className="shrink-0"
+                    />
                   </div>
                   <p className="mt-1 flex items-center gap-1 text-sm text-slate-6">
-                    <MapPin className="size-3.5" /> {l.locationName}
+                    <MapPin className="size-3.5 shrink-0" />
+                    <span className="truncate">{l.locationName}</span>
                   </p>
                   {(l.seasonStart || l.seasonEnd) && (
                     <p className="mt-0.5 flex items-center gap-1 text-sm text-slate-6">
-                      <CalendarRange className="size-3.5" />
-                      {l.seasonStart ? formatDate(l.seasonStart) : '—'} –{' '}
-                      {l.seasonEnd ? formatDate(l.seasonEnd) : '—'}
+                      <CalendarRange className="size-3.5 shrink-0" />
+                      <span className="truncate">
+                        {l.seasonStart ? formatDate(l.seasonStart) : '—'} –{' '}
+                        {l.seasonEnd ? formatDate(l.seasonEnd) : '—'}
+                      </span>
                     </p>
                   )}
                 </div>
@@ -207,7 +213,7 @@ export default function Leagues({
 }
 
 Leagues.layout = (page: React.ReactNode) => (
-  <DashboardLayout title="Ligas" subtitle="Torneos, equipos y estadísticas">
+  <DashboardLayout title="Torneos" subtitle="Equipos, calendario y estadísticas">
     {page}
   </DashboardLayout>
 )

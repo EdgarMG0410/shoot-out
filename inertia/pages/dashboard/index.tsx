@@ -210,12 +210,12 @@ export default function DashboardIndex({
           <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-[0.16em] text-slate-6">
             Accesos rápidos
           </h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {QUICK.map((q) => (
               <Link
                 key={q.href}
                 href={q.href}
-                className="flex flex-col items-start gap-3 rounded-2xl border border-bone-3 bg-chalk p-4 transition-all hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]"
+                className="flex w-28 shrink-0 snap-start flex-col items-start gap-3 rounded-2xl border border-bone-3 bg-chalk p-4 transition-all hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]"
               >
                 <span className="grid size-10 place-items-center rounded-xl bg-bone-2 text-graphite">
                   <q.icon className="size-5" strokeWidth={1.85} />
@@ -369,88 +369,96 @@ export default function DashboardIndex({
           </Card>
         </section>
 
-        {/* Próximos partidos + torneos */}
-        <section className="grid gap-4 lg:grid-cols-2">
-          <Card className="p-5">
-            <SectionHead
-              title="Próximos partidos"
-              action={
-                <Link
-                  href="/dashboard/leagues"
-                  className="ml-auto text-sm font-medium text-slate-6 transition-colors hover:text-graphite"
-                >
-                  Ver torneos →
-                </Link>
-              }
-            />
-            {upcomingMatches.length === 0 ? (
-              <p className="py-6 text-center text-sm text-slate-6">No hay partidos programados.</p>
-            ) : (
-              <ul className="flex flex-col gap-3">
-                {upcomingMatches.map((m) => (
-                  <li
-                    key={m.id}
-                    className="flex items-center gap-3 border-b border-bone-2 pb-3 last:border-0 last:pb-0"
-                  >
-                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-bone-2 text-graphite">
-                      <CalendarDays className="size-[18px]" />
+        {/* Próximos partidos */}
+        <section>
+          <SectionHead
+            title="Próximos partidos"
+            action={
+              <Link
+                href="/dashboard/leagues"
+                className="ml-auto text-sm font-medium text-slate-6 transition-colors hover:text-graphite"
+              >
+                Ver más →
+              </Link>
+            }
+          />
+          {upcomingMatches.length === 0 ? (
+            <Card className="p-6">
+              <p className="text-center text-sm text-slate-6">No hay partidos programados.</p>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {upcomingMatches.slice(0, 3).map((m) => (
+                <Card key={m.id} className="p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-mono text-xs font-medium uppercase tracking-wide text-slate-6">
+                      {formatDate(m.date)} · {m.startTime}
+                    </p>
+                    <span className="inline-flex h-6 items-center rounded-full bg-amber-mark/15 px-2.5 text-[11px] font-semibold text-amber-mark">
+                      Próximo
                     </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-graphite">
-                        {m.homeTeam} vs {m.awayTeam}
-                      </p>
-                      <p className="truncate text-xs text-slate-6">
-                        {m.league} · {m.space}
-                      </p>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <p className="text-sm font-semibold text-graphite">{formatDate(m.date)}</p>
-                      <p className="text-xs tabular-nums text-slate-6">{m.startTime}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
-
-          <Card className="p-5">
-            <SectionHead
-              title="Torneos"
-              action={
-                <Link
-                  href="/dashboard/leagues"
-                  className="ml-auto text-sm font-medium text-slate-6 transition-colors hover:text-graphite"
-                >
-                  Ver todos →
-                </Link>
-              }
-            />
-            {leagues.length === 0 ? (
-              <p className="py-6 text-center text-sm text-slate-6">Aún no hay torneos.</p>
-            ) : (
-              <ul className="flex flex-col gap-3">
-                {leagues.map((l) => (
-                  <li key={l.id}>
-                    <Link
-                      href={`/dashboard/leagues/${l.id}`}
-                      className="group flex items-center gap-3 border-b border-bone-2 pb-3 last:border-0 last:pb-0"
-                    >
-                      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-bone-2 text-graphite">
-                        <Trophy className="size-[18px]" />
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    <p className="truncate font-display text-xl font-bold uppercase tracking-tight text-graphite">
+                      {m.homeTeam}
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono text-sm font-bold uppercase text-rose-mark">
+                        vs
                       </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-graphite">{l.name}</p>
-                        <p className="truncate text-xs text-slate-6">
-                          {l.locationName} · {l.teamsCount} equipos
-                        </p>
-                      </div>
-                      <ArrowRight className="size-4 shrink-0 text-slate-6 transition-transform group-hover:translate-x-0.5" />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
+                      <span className="h-px flex-1 bg-bone-3" />
+                    </div>
+                    <p className="truncate font-display text-xl font-bold uppercase tracking-tight text-graphite">
+                      {m.awayTeam}
+                    </p>
+                  </div>
+                  <div className="mt-4 flex items-center gap-2 border-t border-bone-2 pt-3 text-sm text-slate-6">
+                    <Trophy className="size-4 shrink-0" />
+                    <span className="flex-1 truncate">{m.league}</span>
+                    <span className="shrink-0 truncate">{m.space}</span>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Torneos */}
+        <section>
+          <SectionHead
+            title="Torneos"
+            action={
+              <Link
+                href="/dashboard/leagues"
+                className="ml-auto text-sm font-medium text-slate-6 transition-colors hover:text-graphite"
+              >
+                Ver todos →
+              </Link>
+            }
+          />
+          {leagues.length === 0 ? (
+            <Card className="p-6">
+              <p className="text-center text-sm text-slate-6">Aún no hay torneos.</p>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {leagues.map((l) => (
+                <Link key={l.id} href={`/dashboard/leagues/${l.id}`}>
+                  <Card className="flex h-full items-center gap-3 p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
+                    <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-bone-2 text-graphite">
+                      <Trophy className="size-5" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-graphite">{l.name}</p>
+                      <p className="truncate text-sm text-slate-6">
+                        {l.locationName} · {l.teamsCount} equipos
+                      </p>
+                    </div>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Recent bookings */}
@@ -470,8 +478,33 @@ export default function DashboardIndex({
             {recent.length === 0 ? (
               <p className="px-5 py-12 text-center text-sm text-slate-6">Aún no hay reservas.</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+              <>
+                {/* Mobile cards — no lateral scroll */}
+                <div className="space-y-3 p-3 md:hidden">
+                  {recent.map((b) => (
+                    <div key={b.id} className="rounded-2xl border border-bone-3 bg-bone-1/40 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-graphite">{b.space}</p>
+                          <p className="truncate text-sm text-slate-6">{b.user}</p>
+                        </div>
+                        <StatusPill status={b.status} />
+                      </div>
+                      <div className="mt-3 flex items-center justify-between border-t border-bone-2 pt-3 text-sm text-slate-6">
+                        <span>
+                          {formatDate(b.date)} ·{' '}
+                          <span className="tabular-nums">{timeRange(b.startTime, b.endTime)}</span>
+                        </span>
+                        <span className="font-semibold tabular-nums text-graphite">
+                          {money(b.totalPrice)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop table */}
+                <table className="hidden w-full text-sm md:table">
                   <thead>
                     <tr className="border-b border-bone-3 bg-bone-1/40 text-left text-xs font-medium uppercase tracking-wide text-slate-6">
                       <th className="px-5 py-3">Espacio</th>
@@ -504,7 +537,7 @@ export default function DashboardIndex({
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </>
             )}
           </Card>
         </section>

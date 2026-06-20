@@ -659,7 +659,7 @@ export default function PublicHome({
                   Ver todas <ArrowRight className="size-4" />
                 </Link>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {leagues.slice(0, 8).map((l) => (
                   <Link key={l.id} href={`/ligas/${l.id}`}>
                     <Card className="flex items-center gap-3 p-4 transition-all duration-300 [transition-timing-function:var(--ease-quart)] hover:-translate-y-1 hover:shadow-md">

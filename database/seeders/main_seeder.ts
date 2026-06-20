@@ -258,6 +258,32 @@ export default class extends BaseSeeder {
       },
     })
 
+    // ---- Two extra leagues with this weekend's fixtures (Sat + Sun) ----
+    await this.seedLeague({
+      locationId: centro.id,
+      spaceName: 'Cancha Centro',
+      name: 'Liga Centro Sabatina',
+      description: 'Fútbol 5 los sábados en el Centro.',
+      roster: {
+        'Real Jalisco': ['Ángel Cordero', 'Tavo Ibarra', 'Memo Pineda', 'Beto Salcedo'],
+        'Atlas Centro': ['Iker Solís', 'Dani Murillo', 'Chuy Bañuelos', 'Pol Carrillo'],
+        'Chivas Barrio': ['Lalo Negrete', 'Saúl Padilla', 'Rafa Cortés', 'Nico Maldonado'],
+        'Leones FC': ['Hugo Alcaraz', 'Caleb Mejía', 'Mau Estrada', 'Aldo Rivas'],
+      },
+    })
+    await this.seedLeague({
+      locationId: norte.id,
+      spaceName: 'Estadio Norte',
+      name: 'Copa Norte Dominical',
+      description: 'Fútbol 7 los domingos en Zapopan.',
+      roster: {
+        'Tigres Norte': ['Cris Delgado', 'Beto Lozano', 'Nacho Cuevas', 'Óscar Galván'],
+        'Águilas Patria': ['Emi Cabrera', 'Gael Montes', 'Dani Escobar', 'Pau Linares'],
+        'Halcones Zapopan': ['Diego Arteaga', 'Iker Pulido', 'Bruno Ledezma', 'Lalo Camacho'],
+        'Pumas Norte': ['Raúl Zúñiga', 'Beto Macías', 'Toño Espinoza', 'Chuy Valadez'],
+      },
+    })
+
     // ---- Comunidad demo (only if none exist) ----
     const openMatchCount = await OpenMatch.query().count('* as c').first()
     if (Number(openMatchCount?.$extras.c ?? 0) === 0) {
@@ -377,59 +403,102 @@ export default class extends BaseSeeder {
     }
 
     if (space && teams.length >= 4) {
-      // Round 1, match A — played with a recorded minuta (2-1).
-      const m1 = await Match.create({
-        leagueId: league.id,
-        spaceId: space.id,
-        homeTeamId: teams[0].id,
-        awayTeamId: teams[1].id,
-        date: DateTime.now().plus({ days: 7 }),
-        startTime: '10:00',
-        endTime: '11:00',
-        status: 'played',
-      })
-      await MatchEvent.createMany([
-        {
-          matchId: m1.id,
-          teamId: teams[0].id,
-          playerId: firstPlayer[teams[0].id].id,
-          type: 'goal',
-          minute: 12,
-        },
-        {
-          matchId: m1.id,
-          teamId: teams[0].id,
-          playerId: firstPlayer[teams[0].id].id,
-          type: 'goal',
-          minute: 34,
-        },
-        {
-          matchId: m1.id,
-          teamId: teams[1].id,
-          playerId: firstPlayer[teams[1].id].id,
-          type: 'goal',
-          minute: 50,
-        },
-        {
-          matchId: m1.id,
-          teamId: teams[1].id,
-          playerId: firstPlayer[teams[1].id].id,
-          type: 'yellow',
-          minute: 60,
-        },
-      ])
+      const now = DateTime.now().startOf('day')
+      const sat = now.plus({ days: (6 - now.weekday + 7) % 7 }) // this/next Saturday
+      const sun = sat.plus({ days: 1 })
+      const lastSat = sat.minus({ days: 7 })
+      const lastSun = lastSat.plus({ days: 1 })
+      const fp = (t: Team) => firstPlayer[t.id] ?? null
 
-      // Round 1, match B — scheduled (blocks the court right after).
-      await Match.create({
-        leagueId: league.id,
-        spaceId: space.id,
-        homeTeamId: teams[2].id,
-        awayTeamId: teams[3].id,
-        date: DateTime.now().plus({ days: 7 }),
-        startTime: '11:00',
-        endTime: '12:00',
-        status: 'scheduled',
-      })
+      // Jornada 1 — last weekend, PLAYED (drives the table/scorers/cards).
+      await this.playMatch(league, space, teams[0], teams[1], lastSat, '10:00', fp, [2, 1])
+      await this.playMatch(league, space, teams[2], teams[3], lastSun, '10:00', fp, [1, 1])
+
+      // Jornada 2 — this Saturday, SCHEDULED.
+      await this.scheduleMatch(league, space, teams[0], teams[2], sat, '10:00')
+      await this.scheduleMatch(league, space, teams[1], teams[3], sat, '11:00')
+
+      // Jornada 3 — this Sunday, SCHEDULED.
+      await this.scheduleMatch(league, space, teams[0], teams[3], sun, '10:00')
+      await this.scheduleMatch(league, space, teams[1], teams[2], sun, '11:00')
     }
   }
+
+  private async playMatch(
+    league: League,
+    space: Space,
+    home: Team,
+    away: Team,
+    date: DateTime,
+    startTime: string,
+    fp: (t: Team) => Player | null,
+    score: [number, number]
+  ) {
+    const match = await Match.create({
+      leagueId: league.id,
+      spaceId: space.id,
+      homeTeamId: home.id,
+      awayTeamId: away.id,
+      date,
+      startTime,
+      endTime: addHour(startTime),
+      status: 'played',
+    })
+    const events: {
+      matchId: number
+      teamId: number
+      playerId: number | null
+      type: 'goal' | 'yellow' | 'red'
+      minute: number
+    }[] = []
+    for (let i = 0; i < score[0]; i++)
+      events.push({
+        matchId: match.id,
+        teamId: home.id,
+        playerId: fp(home)?.id ?? null,
+        type: 'goal',
+        minute: 10 + i * 12,
+      })
+    for (let i = 0; i < score[1]; i++)
+      events.push({
+        matchId: match.id,
+        teamId: away.id,
+        playerId: fp(away)?.id ?? null,
+        type: 'goal',
+        minute: 18 + i * 12,
+      })
+    events.push({
+      matchId: match.id,
+      teamId: away.id,
+      playerId: fp(away)?.id ?? null,
+      type: 'yellow',
+      minute: 55,
+    })
+    await MatchEvent.createMany(events)
+  }
+
+  private async scheduleMatch(
+    league: League,
+    space: Space,
+    home: Team,
+    away: Team,
+    date: DateTime,
+    startTime: string
+  ) {
+    await Match.create({
+      leagueId: league.id,
+      spaceId: space.id,
+      homeTeamId: home.id,
+      awayTeamId: away.id,
+      date,
+      startTime,
+      endTime: addHour(startTime),
+      status: 'scheduled',
+    })
+  }
+}
+
+function addHour(t: string): string {
+  const [h, m] = t.split(':')
+  return `${String((Number(h) + 1) % 24).padStart(2, '0')}:${m}`
 }

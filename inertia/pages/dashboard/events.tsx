@@ -242,8 +242,47 @@ export default function Events({
         />
       ) : (
         <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <>
+            {/* Mobile cards — no lateral scroll */}
+            <div className="space-y-3 p-3 md:hidden">
+              {events.map((ev) => (
+                <div key={ev.id} className="rounded-2xl border border-bone-3 bg-bone-1/40 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-graphite">{ev.name}</p>
+                      <p className="truncate text-xs text-slate-6">
+                        {ev.location} · {ev.venue}
+                      </p>
+                    </div>
+                    <StatusPill status={ev.status} />
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-6">
+                    <span>{formatDate(ev.date)}</span>
+                    <span className="tabular-nums">{timeRange(ev.startTime, ev.endTime)}</span>
+                    {ev.capacity != null && <span>Cupo {ev.capacity}</span>}
+                    {ev.price != null && (
+                      <span className="font-medium text-graphite">{money(ev.price)}</span>
+                    )}
+                  </div>
+                  <div className="mt-3 flex items-center justify-end gap-1.5 border-t border-bone-2 pt-3">
+                    <Button variant="secondary" size="sm" onClick={() => setDialog(ev)}>
+                      <Pencil className="size-3.5" /> Editar
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="icon"
+                      onClick={() => remove(ev)}
+                      aria-label="Eliminar"
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop table */}
+            <table className="hidden w-full text-sm md:table">
               <thead>
                 <tr className="border-b border-bone-3 text-left text-xs font-medium uppercase tracking-wide text-slate-6">
                   <th className="px-5 py-3">Evento</th>
@@ -296,7 +335,7 @@ export default function Events({
                 ))}
               </tbody>
             </table>
-          </div>
+          </>
         </Card>
       )}
 
