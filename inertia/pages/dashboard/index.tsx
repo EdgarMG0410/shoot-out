@@ -1,10 +1,16 @@
 import { Head, Link } from '@inertiajs/react'
 import {
+  ArrowRight,
   Ban,
+  Building2,
   CalendarCheck2,
+  CalendarDays,
   Clock,
+  Inbox,
   LandPlot,
+  PartyPopper,
   TrendingUp,
+  Trophy,
   Users,
   type LucideIcon,
 } from 'lucide-react'
@@ -59,6 +65,26 @@ const STATUS_META: Record<string, { label: string; color: string }> = {
   pending: { label: 'Pendientes', color: 'oklch(80% 0.13 80)' },
   cancelled: { label: 'Canceladas', color: 'oklch(63% 0.2 18)' },
 }
+
+type UpcomingMatch = {
+  id: number
+  homeTeam: string
+  awayTeam: string
+  league: string
+  space: string
+  date: string
+  startTime: string
+}
+type LeagueRow = { id: number; name: string; locationName: string; teamsCount: number }
+
+const QUICK = [
+  { href: '/dashboard/bookings', label: 'Reservas', icon: CalendarCheck2 },
+  { href: '/dashboard/leagues', label: 'Torneos', icon: Trophy },
+  { href: '/dashboard/locations', label: 'Locaciones', icon: Building2 },
+  { href: '/dashboard/spaces', label: 'Espacios', icon: LandPlot },
+  { href: '/dashboard/events', label: 'Eventos', icon: PartyPopper },
+  { href: '/dashboard/solicitudes', label: 'Solicitudes', icon: Inbox },
+] as const
 
 function shortDay(iso: string): string {
   const d = new Date(`${iso}T00:00:00`)
@@ -146,12 +172,16 @@ export default function DashboardIndex({
   report,
   timeseries,
   byStatus,
+  upcomingMatches,
+  leagues,
 }: {
   stats: Stats
   recent: RecentBooking[]
   report: Report
   timeseries: TrendPoint[]
   byStatus: StatusSlice[]
+  upcomingMatches: UpcomingMatch[]
+  leagues: LeagueRow[]
 }) {
   const trendBookings = timeseries.reduce((a, p) => a + p.bookings, 0)
   const trendRevenue = timeseries.reduce((a, p) => a + p.revenue, 0)
@@ -175,8 +205,29 @@ export default function DashboardIndex({
     <>
       <Head title="Resumen" />
       <div className="space-y-6">
-        {/* Stats */}
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        {/* Quick actions — mobile only */}
+        <section className="lg:hidden">
+          <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-[0.16em] text-slate-6">
+            Accesos rápidos
+          </h2>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {QUICK.map((q) => (
+              <Link
+                key={q.href}
+                href={q.href}
+                className="flex flex-col items-start gap-3 rounded-2xl border border-bone-3 bg-chalk p-4 transition-all hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]"
+              >
+                <span className="grid size-10 place-items-center rounded-xl bg-bone-2 text-graphite">
+                  <q.icon className="size-5" strokeWidth={1.85} />
+                </span>
+                <span className="text-sm font-semibold text-graphite">{q.label}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* Stats — desktop only */}
+        <section className="hidden gap-4 lg:grid lg:grid-cols-3 xl:grid-cols-6">
           <StatCard icon={TrendingUp} label="Ingresos" value={money(stats.revenue)} accent />
           <StatCard
             icon={CalendarCheck2}
@@ -198,7 +249,7 @@ export default function DashboardIndex({
         </section>
 
         {/* Trend + occupancy gauge */}
-        <section className="grid gap-4 lg:grid-cols-3">
+        <section className="hidden gap-4 lg:grid lg:grid-cols-3">
           <Card className="p-5 lg:col-span-2">
             <div className="mb-2 flex items-start justify-between gap-3">
               <div>
@@ -250,7 +301,7 @@ export default function DashboardIndex({
         </section>
 
         {/* Status breakdown + per-space occupancy */}
-        <section className="grid gap-4 lg:grid-cols-3">
+        <section className="hidden gap-4 lg:grid lg:grid-cols-3">
           <Card className="p-5">
             <h2 className="text-base font-semibold text-graphite">Reservas por estado</h2>
             <p className="text-sm text-slate-6">Distribución histórica</p>
@@ -311,6 +362,90 @@ export default function DashboardIndex({
                     <span className="w-24 shrink-0 text-right text-sm tabular-nums text-slate-6">
                       {s.occupancy}% · {formatNumber(s.bookedHours)}h
                     </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+        </section>
+
+        {/* Próximos partidos + torneos */}
+        <section className="grid gap-4 lg:grid-cols-2">
+          <Card className="p-5">
+            <SectionHead
+              title="Próximos partidos"
+              action={
+                <Link
+                  href="/dashboard/leagues"
+                  className="ml-auto text-sm font-medium text-slate-6 transition-colors hover:text-graphite"
+                >
+                  Ver torneos →
+                </Link>
+              }
+            />
+            {upcomingMatches.length === 0 ? (
+              <p className="py-6 text-center text-sm text-slate-6">No hay partidos programados.</p>
+            ) : (
+              <ul className="flex flex-col gap-3">
+                {upcomingMatches.map((m) => (
+                  <li
+                    key={m.id}
+                    className="flex items-center gap-3 border-b border-bone-2 pb-3 last:border-0 last:pb-0"
+                  >
+                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-bone-2 text-graphite">
+                      <CalendarDays className="size-[18px]" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-graphite">
+                        {m.homeTeam} vs {m.awayTeam}
+                      </p>
+                      <p className="truncate text-xs text-slate-6">
+                        {m.league} · {m.space}
+                      </p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="text-sm font-semibold text-graphite">{formatDate(m.date)}</p>
+                      <p className="text-xs tabular-nums text-slate-6">{m.startTime}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+
+          <Card className="p-5">
+            <SectionHead
+              title="Torneos"
+              action={
+                <Link
+                  href="/dashboard/leagues"
+                  className="ml-auto text-sm font-medium text-slate-6 transition-colors hover:text-graphite"
+                >
+                  Ver todos →
+                </Link>
+              }
+            />
+            {leagues.length === 0 ? (
+              <p className="py-6 text-center text-sm text-slate-6">Aún no hay torneos.</p>
+            ) : (
+              <ul className="flex flex-col gap-3">
+                {leagues.map((l) => (
+                  <li key={l.id}>
+                    <Link
+                      href={`/dashboard/leagues/${l.id}`}
+                      className="group flex items-center gap-3 border-b border-bone-2 pb-3 last:border-0 last:pb-0"
+                    >
+                      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-bone-2 text-graphite">
+                        <Trophy className="size-[18px]" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-graphite">{l.name}</p>
+                        <p className="truncate text-xs text-slate-6">
+                          {l.locationName} · {l.teamsCount} equipos
+                        </p>
+                      </div>
+                      <ArrowRight className="size-4 shrink-0 text-slate-6 transition-transform group-hover:translate-x-0.5" />
+                    </Link>
                   </li>
                 ))}
               </ul>

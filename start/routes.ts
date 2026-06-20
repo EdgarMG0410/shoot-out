@@ -27,6 +27,7 @@ const ClientController = () => import('#controllers/client_controller')
 const DashboardController = () => import('#controllers/dashboard_controller')
 const DashboardSpacesController = () => import('#controllers/dashboard/spaces_controller')
 const DashboardBookingsController = () => import('#controllers/dashboard/bookings_controller')
+const DashboardLeadsController = () => import('#controllers/dashboard/leads_controller')
 const DashboardLocationsController = () => import('#controllers/dashboard/locations_controller')
 const DashboardEventsController = () => import('#controllers/dashboard/events_controller')
 const DashboardLeaguesController = () => import('#controllers/dashboard/leagues_controller')
@@ -172,6 +173,8 @@ router
     router
       .get('/dashboard/bookings', [DashboardBookingsController, 'index'])
       .as('dashboard.bookings')
+
+    router.get('/dashboard/solicitudes', [DashboardLeadsController, 'index']).as('dashboard.leads')
 
     router
       .get('/dashboard/locations', [DashboardLocationsController, 'index'])

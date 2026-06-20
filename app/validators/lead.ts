@@ -9,5 +9,6 @@ export const createLeadValidator = vine.compile(
     phone: vine.string().trim().maxLength(40).nullable().optional(),
     type: vine.enum(LEAD_TYPE),
     message: vine.string().trim().maxLength(280).nullable().optional(),
+    contactMedium: vine.string().trim().maxLength(60).nullable().optional(),
   })
 )

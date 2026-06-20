@@ -1,0 +1,109 @@
+/* ============================================================
+   FORMA — Football App Brand Tokens
+   Drop into your global stylesheet. All values are final (hi-fi).
+   ============================================================ */
+:root {
+  /* ---- Brand colour ---- */
+  --color-pitch:        #00E676; /* primary accent — ACTION only (join/confirm/go) */
+  --color-pitch-hover:  #00C853; /* primary button hover/active */
+  --color-pitch-ink:    #08140C; /* text/icon on top of green */
+  --color-pitch-deep:   #00A152; /* green text on LIGHT backgrounds (legible) */
+
+  /* ---- Neutrals (from logo) ---- */
+  --color-ink:     #1F2020; /* logo black — primary text on light */
+  --color-carbon:  #0E0F0F; /* dark canvas */
+  --color-steel:   #8E8F90; /* logo grey */
+  --color-slate:   #565858; /* muted text */
+  --color-mist:    #E3E4E0; /* light borders/dividers */
+  --color-paper:   #F4F5F2; /* light canvas */
+  --color-white:   #FFFFFF;
+
+  /* ---- Surfaces: DARK theme (Direction A) ---- */
+  --dark-bg:        #0E0F0F;
+  --dark-surface:   #181919;
+  --dark-border:    rgba(255,255,255,0.10);
+  --dark-text:      #FFFFFF;
+  --dark-text-mute: #A4A6A4;
+
+  /* ---- Surfaces: LIGHT theme (Direction B) ---- */
+  --light-bg:        #F4F5F2;
+  --light-surface:   #FFFFFF;
+  --light-border:    #E3E4E0;
+  --light-text:      #1F2020;
+  --light-text-mute: #565858;
+
+  /* ---- Typography ---- */
+  --font-display: 'Space Grotesk', system-ui, sans-serif; /* headlines, scores, names */
+  --font-body:    'Manrope', system-ui, sans-serif;       /* UI + body */
+  --font-mono:    'Space Mono', ui-monospace, monospace;  /* labels, kit numbers, stats */
+
+  /* type scale (px / weight) */
+  --fs-display: 76px;  --fw-display: 700; /* tracking -0.03em, line-height 0.92 */
+  --fs-h1:      46px;  --fw-h1:      700; /* tracking -0.03em */
+  --fs-h2:      28px;  --fw-h2:      600;
+  --fs-h3:      22px;  --fw-h3:      600;
+  --fs-body:    15px;  --fw-body:    400; /* line-height 1.6 */
+  --fs-caption: 12px;  --fw-caption: 500;
+  --fs-mono:    12px;  --fw-mono:    700; /* tracking 0.14–0.18em, uppercase */
+
+  /* ---- Radius ---- */
+  --radius-sm:  8px;
+  --radius-md:  11px;  /* buttons, inputs */
+  --radius-lg:  14px;  /* tiles */
+  --radius-xl:  18px;  /* cards */
+  --radius-pill: 999px;
+
+  /* ---- Shadow ---- */
+  --shadow-card: 0 12px 40px rgba(0,0,0,0.12);
+  --shadow-phone: 0 20px 50px rgba(0,0,0,0.40);
+
+  /* ---- Spacing scale (4px base) ---- */
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-12: 48px; --space-14: 56px;
+}
+
+/* ============================================================
+   COMPONENT RECIPES (copy into your component layer)
+   ============================================================ */
+
+/* Primary button — green = action */
+.btn-primary {
+  font-family: var(--font-body); font-weight: 700; font-size: 15px;
+  background: var(--color-pitch); color: var(--color-pitch-ink);
+  border: none; border-radius: var(--radius-md);
+  padding: 14px 26px; cursor: pointer; transition: background .15s;
+}
+.btn-primary:hover { background: var(--color-pitch-hover); }
+.btn-primary:disabled,
+.btn-locked { background: var(--color-mist); color: #A9ABA6; cursor: not-allowed; } /* light */
+
+/* Secondary (outline) */
+.btn-secondary {
+  font-family: var(--font-body); font-weight: 600; font-size: 15px;
+  background: transparent; color: var(--color-ink);
+  border: 1.5px solid var(--color-ink); border-radius: var(--radius-md);
+  padding: 14px 26px; cursor: pointer; transition: all .15s;
+}
+.btn-secondary:hover { background: var(--color-ink); color: #fff; }
+
+/* Ghost */
+.btn-ghost {
+  font-family: var(--font-body); font-weight: 600; font-size: 15px;
+  background: transparent; color: var(--color-pitch-deep);
+  border: none; padding: 14px 18px; cursor: pointer;
+}
+.btn-ghost:hover { color: var(--color-ink); }
+
+/* Position chip / pill */
+.chip {
+  font-family: var(--font-mono); font-weight: 700; font-size: 12px;
+  border-radius: var(--radius-pill); padding: 7px 15px;
+  color: var(--color-ink); border: 1px solid #cfd0cc;
+}
+.chip--active { background: var(--color-pitch); color: var(--color-pitch-ink); border: none; }
+
+/* Section label (mono kicker) */
+.kicker {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--color-pitch-deep);
+}

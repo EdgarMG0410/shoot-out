@@ -13,7 +13,7 @@ import {
   Zap,
 } from 'lucide-react'
 import PublicLayout from '~/layouts/public'
-import { Button, Card, Field, Input, Photo, Select } from '~/components/ui'
+import { Button, Card, Field, Input, Photo, Select, Textarea } from '~/components/ui'
 import { Reveal, CountUp, Marquee, Magnetic, CommunityGallery } from '~/components/interactive'
 import { COMMUNITY_PHOTOS, HERO_PHOTO } from '~/lib/community'
 import { cn } from '~/lib/utils'
@@ -79,7 +79,7 @@ const OWNER_BENEFITS = [
   {
     icon: Trophy,
     title: 'Administra torneos',
-    text: 'Ligas, calendario, tabla de posiciones y estadísticas en un panel.',
+    text: 'Torneos, calendario, tabla de posiciones y estadísticas en un panel.',
   },
   {
     icon: Megaphone,
@@ -200,7 +200,9 @@ function BenefitColumn({
   return (
     <div>
       <div className="flex items-baseline justify-between border-b-2 border-graphite pb-3">
-        <h3 className="text-sm font-bold uppercase tracking-[0.16em] text-graphite">{label}</h3>
+        <h3 className="font-mono text-sm font-bold uppercase tracking-[0.16em] text-graphite">
+          {label}
+        </h3>
         <span className="font-display text-sm tabular-nums text-slate-6">
           {String(items.length).padStart(2, '0')}
         </span>
@@ -232,10 +234,22 @@ function BenefitColumn({
 }
 
 function LeadForm({ initialType }: { initialType: 'jugador' | 'cancha' }) {
-  const form = useForm({ name: '', email: '', phone: '', type: initialType, message: '' })
+  const form = useForm({
+    name: '',
+    email: '',
+    phone: '',
+    type: initialType,
+    contactMedium: [] as string[],
+    message: '',
+  })
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
-    form.transform((d) => ({ ...d, phone: d.phone || null, message: d.message || null }))
+    form.transform((d) => ({
+      ...d,
+      phone: d.phone || null,
+      message: d.message || null,
+      contactMedium: d.contactMedium.length ? d.contactMedium.join(', ') : null,
+    }))
     form.post('/interesados', { preserveScroll: true, onSuccess: () => form.reset() })
   }
 
@@ -243,6 +257,14 @@ function LeadForm({ initialType }: { initialType: 'jugador' | 'cancha' }) {
     { key: 'jugador', label: 'Soy jugador' },
     { key: 'cancha', label: 'Tengo cancha' },
   ] as const
+  const MEDIUMS = ['WhatsApp', 'Llamada'] as const
+  const toggleMedium = (m: string) =>
+    form.setData(
+      'contactMedium',
+      form.data.contactMedium.includes(m)
+        ? form.data.contactMedium.filter((x) => x !== m)
+        : [...form.data.contactMedium, m]
+    )
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
@@ -263,11 +285,11 @@ function LeadForm({ initialType }: { initialType: 'jugador' | 'cancha' }) {
           </button>
         ))}
       </div>
-      <Field label="Nombre" error={form.errors.name}>
+      <Field label="Nombre y apellido" error={form.errors.name}>
         <Input
           value={form.data.name}
           onChange={(e) => form.setData('name', e.target.value)}
-          placeholder="Tu nombre"
+          placeholder="Tu nombre y apellido"
           required
         />
       </Field>
@@ -285,6 +307,39 @@ function LeadForm({ initialType }: { initialType: 'jugador' | 'cancha' }) {
           value={form.data.phone}
           onChange={(e) => form.setData('phone', e.target.value)}
           placeholder="33 1234 5678"
+        />
+      </Field>
+      <Field
+        label="¿Por cuál medio deseas que te contactemos?"
+        hint="Opcional"
+        error={form.errors.contactMedium}
+      >
+        <div className="flex flex-wrap gap-2">
+          {MEDIUMS.map((m) => {
+            const active = form.data.contactMedium.includes(m)
+            return (
+              <button
+                key={m}
+                type="button"
+                onClick={() => toggleMedium(m)}
+                className={cn(
+                  'rounded-full border px-4 py-1.5 text-sm font-semibold transition-colors',
+                  active
+                    ? 'border-transparent bg-lime-mark text-graphite'
+                    : 'border-bone-3 text-slate-6 hover:border-graphite hover:text-graphite'
+                )}
+              >
+                {m}
+              </button>
+            )
+          })}
+        </div>
+      </Field>
+      <Field label="¿En qué te podemos ayudar?" hint="Opcional" error={form.errors.message}>
+        <Textarea
+          value={form.data.message}
+          onChange={(e) => form.setData('message', e.target.value)}
+          placeholder="Cuéntanos qué buscas…"
         />
       </Field>
       <Button type="submit" variant="lime" className="mt-1 w-full" disabled={form.processing}>
@@ -333,7 +388,7 @@ export default function PublicHome({
   const HERO_STATS = [
     { n: stats.sucursales, l: 'Sucursales' },
     { n: stats.canchas, l: 'Canchas' },
-    { n: stats.ligas, l: 'Ligas activas' },
+    { n: stats.ligas, l: 'Torneos activos' },
   ]
 
   let wordDelay = 220
@@ -355,7 +410,7 @@ export default function PublicHome({
         <div className="mx-auto w-full max-w-7xl px-5 sm:px-8">
           <div className="grid items-center gap-12 py-20 text-chalk lg:grid-cols-[1.25fr_0.75fr] lg:py-28">
             <div>
-              <span className="hidden md:inline-flex items-center gap-1.5 rounded-full bg-chalk/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-chalk ring-1 ring-chalk/25 backdrop-blur motion-safe:animate-[fade-in_700ms_var(--ease-quart)_both]">
+              <span className="hidden md:inline-flex items-center gap-1.5 rounded-full bg-chalk/10 px-3 py-1 font-mono text-xs font-bold uppercase tracking-[0.14em] text-chalk ring-1 ring-chalk/25 backdrop-blur motion-safe:animate-[fade-in_700ms_var(--ease-quart)_both]">
                 <Zap className="size-3.5" /> Marketplace deportivo · Guadalajara
               </span>
 
@@ -371,7 +426,7 @@ export default function PublicHome({
                     </span>
                   ))}
                 </div>
-                <div className="block text-lime-mark">
+                <div className="block text-chalk/70">
                   {HERO_TITLE_BOTTOM.map((w) => (
                     <span
                       key={w}
@@ -415,7 +470,7 @@ export default function PublicHome({
               <dl className="mt-12 flex flex-wrap gap-x-10 gap-y-4 border-t border-chalk/15 pt-6 motion-safe:animate-[fade-in_800ms_900ms_var(--ease-quart)_both]">
                 {HERO_STATS.map((s) => (
                   <div key={s.l}>
-                    <dt className="text-4xl font-bold tabular-nums text-lime-mark">
+                    <dt className="font-mono text-4xl font-bold tabular-nums text-chalk">
                       <CountUp value={s.n} />
                     </dt>
                     <dd className="text-xs font-medium uppercase tracking-wide text-chalk/60">
@@ -456,7 +511,7 @@ export default function PublicHome({
       <section className="border-y border-bone-3 bg-graphite py-12">
         <div className="mx-auto mb-8 max-w-7xl px-5 sm:px-8">
           <div className="flex items-center gap-3">
-            <span className="h-7 w-1.5 rounded-full bg-lime-mark" />
+            <span className="h-7 w-1.5 rounded-full bg-chalk" />
             <h2 className="text-2xl font-bold tracking-tight text-chalk sm:text-3xl">
               La comunidad que ya juega
             </h2>
@@ -484,7 +539,7 @@ export default function PublicHome({
           <Reveal>
             <div className="grid gap-6 lg:grid-cols-12 lg:items-end">
               <div className="lg:col-span-7">
-                <span className="text-xs font-bold uppercase tracking-[0.2em] text-slate-6">
+                <span className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-slate-6">
                   Por qué Futhub
                 </span>
                 <h2 className="mt-3 text-4xl font-bold leading-[1.04] tracking-tight text-graphite sm:text-5xl">
@@ -528,7 +583,7 @@ export default function PublicHome({
           <Reveal>
             <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
               <div className="flex items-center gap-3">
-                <span className="h-8 w-1.5 rounded-full bg-lime-mark" />
+                <span className="h-8 w-1.5 rounded-full bg-graphite" />
                 <div>
                   <h2 className="text-3xl font-bold tracking-tight text-graphite sm:text-4xl">
                     Encuentra tu cancha
@@ -569,7 +624,7 @@ export default function PublicHome({
           <Reveal>
             <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
               <div className="flex items-center gap-3">
-                <span className="h-8 w-1.5 rounded-full bg-flame" />
+                <span className="h-8 w-1.5 rounded-full bg-graphite" />
                 <div>
                   <h2 className="text-3xl font-bold tracking-tight text-graphite sm:text-4xl">
                     Momentos de la comunidad
@@ -592,9 +647,9 @@ export default function PublicHome({
             <section>
               <div className="mb-5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="h-8 w-1.5 rounded-full bg-electric" />
+                  <span className="h-8 w-1.5 rounded-full bg-graphite" />
                   <h2 className="text-3xl font-bold tracking-tight text-graphite sm:text-4xl">
-                    Ligas
+                    Torneos
                   </h2>
                 </div>
                 <Link
@@ -608,7 +663,7 @@ export default function PublicHome({
                 {leagues.slice(0, 8).map((l) => (
                   <Link key={l.id} href={`/ligas/${l.id}`}>
                     <Card className="flex items-center gap-3 p-4 transition-all duration-300 [transition-timing-function:var(--ease-quart)] hover:-translate-y-1 hover:shadow-md">
-                      <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-lime-mark/20 text-lime-deep">
+                      <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-bone-2 text-graphite">
                         <Trophy className="size-5" />
                       </span>
                       <div className="min-w-0">
@@ -638,7 +693,7 @@ export default function PublicHome({
                     className="absolute inset-0 -z-20 size-full object-cover"
                   />
                   <div className="brand-gradient absolute inset-0 -z-10 opacity-90" />
-                  <span className="inline-flex items-center rounded-full bg-lime-mark/20 px-3 py-1 text-xs font-bold uppercase tracking-wide text-lime-mark ring-1 ring-lime-mark/30">
+                  <span className="inline-flex items-center rounded-full bg-chalk/10 px-3 py-1 font-mono text-xs font-bold uppercase tracking-[0.16em] text-chalk ring-1 ring-chalk/20">
                     Caso piloto
                   </span>
                   <h2 className="mt-5 text-3xl font-bold tracking-tight sm:text-4xl">
@@ -655,7 +710,7 @@ export default function PublicHome({
                   </p>
                 </div>
                 <div className="p-8 sm:p-12">
-                  <span className="text-xs font-bold uppercase tracking-[0.16em] text-slate-6">
+                  <span className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-slate-6">
                     Súmate
                   </span>
                   <h3 className="mt-2 text-2xl font-bold tracking-tight text-graphite">

@@ -4,6 +4,8 @@ import Space from '#models/space'
 import Booking from '#models/booking'
 import Payment from '#models/payment'
 import User from '#models/user'
+import League from '#models/league'
+import Match from '#models/match'
 import BookingService from '#services/booking_service'
 
 const count = (row: { $extras: { c?: string | number } } | null) => Number(row?.$extras.c ?? 0)
@@ -57,6 +59,25 @@ export default class DashboardController {
       status: r.status as string,
       count: count(r),
     }))
+
+    // ---- Próximos partidos + torneos (vista móvil) ----
+    const today = DateTime.now().toISODate()!
+    const upcomingMatches = await Match.query()
+      .where('status', 'scheduled')
+      .where('date', '>=', today)
+      .preload('homeTeam')
+      .preload('awayTeam')
+      .preload('space')
+      .preload('league')
+      .orderBy('date')
+      .orderBy('start_time')
+      .limit(5)
+
+    const leaguesList = await League.query()
+      .preload('location')
+      .withCount('teams')
+      .orderBy('name')
+      .limit(6)
 
     // ---- Ocupación simple (próximos 7 días) ----
     const svc = new BookingService()
@@ -130,6 +151,21 @@ export default class DashboardController {
       },
       timeseries,
       byStatus,
+      upcomingMatches: upcomingMatches.map((m) => ({
+        id: m.id,
+        homeTeam: m.homeTeam?.name ?? '—',
+        awayTeam: m.awayTeam?.name ?? '—',
+        league: m.league?.name ?? '—',
+        space: m.space?.name ?? '—',
+        date: m.date?.toISODate() ?? '',
+        startTime: m.startTime,
+      })),
+      leagues: leaguesList.map((l) => ({
+        id: l.id,
+        name: l.name,
+        locationName: l.location?.name ?? '—',
+        teamsCount: Number(l.$extras.teams_count ?? 0),
+      })),
     })
   }
 }

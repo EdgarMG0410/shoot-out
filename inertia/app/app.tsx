@@ -3,16 +3,15 @@
 /// <reference path="../../config/auth.ts" />
 
 import '../css/app.css'
-import '@fontsource-variable/geist'
-import '@fontsource-variable/space-grotesk'
 import { createRoot } from 'react-dom/client'
 import { createInertiaApp } from '@inertiajs/react'
 import { resolvePageComponent } from '@adonisjs/inertia/helpers'
+import { Loader } from '~/components/loader'
 
 const appName = import.meta.env.VITE_APP_NAME || 'Futhub'
 
 createInertiaApp({
-  progress: { color: 'oklch(86% 0.2 142)', delay: 120 },
+  progress: { color: '#00E676', delay: 120 },
 
   title: (title) => (title ? `${title} · ${appName}` : appName),
 
@@ -26,6 +25,11 @@ createInertiaApp({
   },
 
   setup({ el, App, props }) {
-    createRoot(el).render(<App {...props} />)
+    createRoot(el).render(
+      <>
+        <App {...props} />
+        <Loader />
+      </>
+    )
   },
 })

@@ -23,6 +23,10 @@ export default class Lead extends BaseModel {
   @column()
   declare message: string | null
 
+  /** Preferred contact channel(s) — e.g. "WhatsApp, Llamada". */
+  @column()
+  declare contactMedium: string | null
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 }

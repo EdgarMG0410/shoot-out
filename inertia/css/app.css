@@ -12,43 +12,44 @@
  | becomes neutral gray with its contrast relationships preserved 1:1.
  */
 @theme {
-  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
-  /* Display/heading family. Drop Commuters Sans files via @font-face below to
-     activate it; until then it falls back to Geist gracefully. */
-  --font-display: 'Space Grotesk Variable', 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  /* ---- Typography (FORMA brand) ---- */
+  --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif; /* UI + body */
+  --font-mono: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, monospace; /* labels, stats */
+  --font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif; /* headlines */
 
-  --color-graphite: oklch(20% 0.01 250);
-  --color-graphite-2: oklch(26% 0.012 250);
-  --color-graphite-3: oklch(38% 0.012 250);
+  /* ---- Neutrals (FORMA brand) — graphite=ink · bone=paper/mist · chalk=white. ---- */
+  --color-graphite: #1f2020; /* ink — primary text + dark surfaces */
+  --color-graphite-2: #2c2d2d; /* lighter ink (hover on dark) */
+  --color-graphite-3: #565858; /* slate */
 
-  --color-bone-1: oklch(97% 0.004 250);
-  --color-bone-2: oklch(94% 0.006 250);
-  --color-bone-3: oklch(89% 0.007 250);
-  --color-chalk: oklch(99.3% 0.0015 250);
+  --color-bone-1: #f4f5f2; /* paper — light canvas */
+  --color-bone-2: #ecede9; /* subtle fill */
+  --color-bone-3: #e3e4e0; /* mist — borders / dividers */
+  --color-chalk: #ffffff; /* white — cards / surface */
 
-  --color-slate-3: oklch(72% 0.01 250);
-  --color-slate-6: oklch(50% 0.013 250);
+  --color-slate-3: #8e8f90; /* steel */
+  --color-slate-6: #565858; /* slate — muted text */
 
-  /* Brand accent — vivid turf green (the signature). Bright mark for fills on
-     dark/photo, deep for readable text + links on light. */
-  --color-lime-mark: oklch(85% 0.21 143);
-  --color-lime-deep: oklch(55% 0.15 148);
-  /* Semantic status — success / warning / error. */
-  --color-emerald-mark: oklch(62% 0.15 158);
-  --color-amber-mark: oklch(80% 0.13 80);
-  --color-rose-mark: oklch(63% 0.2 18);
+  /* ---- Action accent — Pitch green. The only hue; signals action only. ---- */
+  --color-lime-mark: #00e676; /* pitch */
+  --color-lime-deep: #00a152; /* pitch-deep — green text on light / hover */
 
-  /* Energy accents — electric blue + flame orange, used sparingly for spark. */
-  --color-electric: oklch(70% 0.16 240);
-  --color-electric-deep: oklch(55% 0.16 245);
-  --color-flame: oklch(70% 0.2 45);
+  /* ---- Semantic status (booking states) ---- */
+  --color-emerald-mark: #00c853; /* confirmed / active (pitch-hover) */
+  --color-amber-mark: oklch(80% 0.13 80); /* pending */
+  --color-rose-mark: oklch(63% 0.2 18); /* cancelled / error */
 
-  --radius: 0.5rem;
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.75rem;
-  --radius-2xl: 1rem;
-  --radius-3xl: 1.375rem;
+  /* ---- Legacy accent tokens neutralised to brand neutrals (mono brand). ---- */
+  --color-electric: #565858; /* slate */
+  --color-electric-deep: #1f2020; /* ink */
+  --color-flame: #8e8f90; /* steel */
+
+  /* ---- Radius (FORMA: md 11 buttons · lg 14 tiles · xl 18 cards · pill) ---- */
+  --radius: 0.6875rem; /* 11 */
+  --radius-lg: 0.6875rem; /* 11 — buttons/inputs */
+  --radius-xl: 0.875rem; /* 14 — tiles */
+  --radius-2xl: 1.125rem; /* 18 — cards */
+  --radius-3xl: 1.375rem; /* 22 */
 }
 
 /*

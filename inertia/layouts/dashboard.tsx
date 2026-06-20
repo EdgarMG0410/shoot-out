@@ -3,6 +3,7 @@ import { Link, router, usePage } from '@inertiajs/react'
 import {
   Building2,
   CalendarCheck2,
+  Inbox,
   LandPlot,
   LayoutDashboard,
   LogOut,
@@ -25,9 +26,10 @@ const NAV = [
   { href: '/dashboard', label: 'Resumen', icon: LayoutDashboard },
   { href: '/dashboard/locations', label: 'Locaciones', icon: Building2 },
   { href: '/dashboard/spaces', label: 'Espacios', icon: LandPlot },
-  { href: '/dashboard/leagues', label: 'Ligas', icon: Trophy },
+  { href: '/dashboard/leagues', label: 'Torneos', icon: Trophy },
   { href: '/dashboard/events', label: 'Eventos', icon: PartyPopper },
   { href: '/dashboard/bookings', label: 'Reservas', icon: CalendarCheck2 },
+  { href: '/dashboard/solicitudes', label: 'Solicitudes', icon: Inbox },
 ]
 
 function initials(user: SharedUser): string {

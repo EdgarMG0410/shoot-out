@@ -9,7 +9,7 @@ type SharedUser = { id: number; fullName: string | null; email: string; role: st
 
 const NAV = [
   { href: '/', label: 'Inicio' },
-  { href: '/ligas', label: 'Ligas' },
+  { href: '/ligas', label: 'Torneos' },
   { href: '/comunidad', label: 'Comunidad' },
 ]
 
@@ -103,7 +103,7 @@ function EntryChoiceDialog({
           </span>
           <div>
             <p className="font-semibold text-graphite">Soy admin</p>
-            <p className="mt-0.5 text-sm text-slate-6">Administra canchas, ligas y reservas.</p>
+            <p className="mt-0.5 text-sm text-slate-6">Administra canchas, torneos y reservas.</p>
           </div>
         </button>
       </div>
@@ -115,22 +115,27 @@ function EntryChoiceDialog({
 const SOCIALS: { name: string; href: string; path: string }[] = [
   {
     name: 'Instagram',
-    href: '#',
+    href: 'https://www.instagram.com/hubfutbolerodigital',
     path: 'M7.03 2C4.26 2 2 4.26 2 7.03v9.94C2 19.74 4.26 22 7.03 22h9.94C19.74 22 22 19.74 22 16.97V7.03C22 4.26 19.74 2 16.97 2H7.03Zm9.97 3.4a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z',
   },
   {
     name: 'Facebook',
-    href: '#',
+    href: 'https://www.facebook.com/hubfutbolero/',
     path: 'M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.85c0-2.5 1.49-3.89 3.78-3.89 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0 0 22 12Z',
   },
   {
     name: 'TikTok',
-    href: '#',
+    href: 'https://www.tiktok.com/@futhubdigital',
     path: 'M16.5 2c.36 2.2 1.6 3.78 3.8 4v2.62c-1.27.12-2.5-.2-3.6-.83v6.04a5.94 5.94 0 1 1-5.94-5.94c.3 0 .6.02.9.07v2.7a3.25 3.25 0 1 0 2.34 3.12V2h2.5Z',
   },
   {
+    name: 'YouTube',
+    href: 'https://www.youtube.com/@FutHubDigital',
+    path: 'M23.5 6.5a3 3 0 0 0-2.1-2.1C19.5 4 12 4 12 4s-7.5 0-9.4.4A3 3 0 0 0 .5 6.5 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.5 3 3 0 0 0 2.1 2.1C4.5 20 12 20 12 20s7.5 0 9.4-.4a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.5ZM9.6 15.5v-7l6.5 3.5-6.5 3.5Z',
+  },
+  {
     name: 'WhatsApp',
-    href: '#',
+    href: 'https://wa.me/523326014934',
     path: 'M12.04 2A9.93 9.93 0 0 0 2.1 11.94c0 1.75.46 3.46 1.34 4.97L2 22l5.23-1.37a9.9 9.9 0 0 0 4.8 1.22h.01a9.94 9.94 0 0 0 9.93-9.93A9.93 9.93 0 0 0 12.04 2Zm5.8 14.04c-.25.7-1.44 1.33-2 1.42-.51.08-1.16.11-1.87-.12-.43-.14-.98-.32-1.69-.62-2.97-1.28-4.9-4.27-5.05-4.47-.15-.2-1.2-1.6-1.2-3.05 0-1.45.76-2.16 1.03-2.46.27-.3.59-.37.79-.37l.57.01c.18 0 .43-.07.67.51.25.6.84 2.05.91 2.2.07.15.12.32.02.52-.1.2-.15.32-.3.5l-.45.52c-.15.15-.31.32-.13.62.17.3.76 1.25 1.63 2.02 1.12.99 2.06 1.3 2.36 1.45.3.15.47.13.64-.08.17-.2.74-.86.94-1.16.2-.3.4-.25.67-.15.27.1 1.72.81 2.01.96.3.15.5.22.57.35.07.12.07.72-.18 1.42Z',
   },
 ]
@@ -256,17 +261,19 @@ export default function PublicLayout({
       >
         <div
           className={cn(
-            'relative mx-auto flex items-center justify-between gap-3 rounded-full border backdrop-blur-md transition-all duration-300 ease-(--ease-quart)',
+            'mx-auto flex items-center gap-3 rounded-full border backdrop-blur-md transition-all duration-300 ease-(--ease-quart)',
             scrolled
-              ? 'max-w-3xl border-bone-3 bg-bone-1/85 px-3 py-1.5 shadow-lg shadow-graphite/5'
-              : 'max-w-5xl border-transparent bg-bone-1/70 px-5 py-2.5'
+              ? 'max-w-3xl border-bone-3 bg-bone-1/85 px-2.5 py-1.5 shadow-lg shadow-graphite/5'
+              : 'max-w-5xl border-transparent bg-bone-1/70 px-3.5 py-2'
           )}
         >
-          <Link href="/" className="shrink-0" aria-label="Futhub — inicio">
-            <Logo size="sm" />
-          </Link>
+          <div className="flex flex-1 items-center justify-start">
+            <Link href="/" aria-label="Futhub — inicio" className="inline-flex items-center">
+              <Logo size="sm" />
+            </Link>
+          </div>
 
-          <nav className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-1 sm:flex">
+          <nav className="hidden shrink-0 items-center gap-1 sm:flex">
             {NAV.map((n) => (
               <Link
                 key={n.href}
@@ -283,7 +290,7 @@ export default function PublicLayout({
             ))}
           </nav>
 
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex flex-1 items-center justify-end gap-2">
             {user ? (
               <>
                 <Link
