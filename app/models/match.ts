@@ -38,6 +38,12 @@ export default class Match extends BaseModel {
   @column()
   declare status: MatchStatus
 
+  @column()
+  declare round: number | null
+
+  @column()
+  declare cedulaImageUrl: string | null
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 

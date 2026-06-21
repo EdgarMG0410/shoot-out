@@ -101,6 +101,8 @@ export default class DashboardLeaguesController {
           startTime: m.startTime,
           endTime: m.endTime,
           status: m.status,
+          round: m.round,
+          cedulaImageUrl: m.cedulaImageUrl,
           homeTeamId: m.homeTeamId,
           homeTeam: m.homeTeam?.name ?? '—',
           awayTeamId: m.awayTeamId,

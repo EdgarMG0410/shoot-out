@@ -180,6 +180,27 @@
   }
 }
 
+/* Dialog motion — bottom-sheet slide-up on mobile, soft fade on desktop. */
+@keyframes drawer-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+.scrim-in {
+  animation: fade-in 280ms ease both;
+}
+.drawer-up {
+  animation: drawer-up 320ms var(--ease-expo, cubic-bezier(0.16, 1, 0.3, 1)) both;
+}
+@media (min-width: 640px) {
+  .drawer-up {
+    animation: page-fade-up 240ms var(--ease-quart, cubic-bezier(0.25, 1, 0.5, 1)) both;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

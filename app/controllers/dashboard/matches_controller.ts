@@ -13,6 +13,7 @@ import {
   updateMatchValidator,
   createMatchEventValidator,
   generateFixturesValidator,
+  saveCedulaValidator,
 } from '#validators/match'
 
 export default class DashboardMatchesController {
@@ -67,6 +68,7 @@ export default class DashboardMatchesController {
       startTime: data.startTime,
       endTime: data.endTime,
       status: 'scheduled',
+      round: data.round ?? null,
     })
     session.flash('success', 'Partido programado')
     return response.redirect().back()
@@ -161,6 +163,9 @@ export default class DashboardMatchesController {
       status,
       homeTeamId: data.homeTeamId ?? match.homeTeamId,
       awayTeamId: data.awayTeamId ?? match.awayTeamId,
+      round: data.round === undefined ? match.round : data.round,
+      cedulaImageUrl:
+        data.cedulaImageUrl === undefined ? match.cedulaImageUrl : data.cedulaImageUrl,
     })
     await match.save()
     session.flash('success', 'Partido actualizado')
@@ -209,7 +214,60 @@ export default class DashboardMatchesController {
       match.status = 'played'
       await match.save()
     }
-    session.flash('success', 'Registrado en la minuta')
+    session.flash('success', 'Registrado en la cédula')
+    return response.redirect().back()
+  }
+
+  /**
+   * Batch save for the cédula: applies all queued additions and removals from
+   * the browser in one request, then recomputes the match status. Invalid adds
+   * (wrong team/player) are silently skipped.
+   */
+  async saveCedula({ params, request, response, session }: HttpContext) {
+    const match = await Match.find(params.id)
+    if (!match) {
+      session.flash('error', 'Partido no encontrado')
+      return response.redirect().back()
+    }
+    const data = await request.validateUsing(saveCedulaValidator)
+
+    if (data.removes.length) {
+      await MatchEvent.query()
+        .where('match_id', match.id)
+        .whereIn('id', data.removes)
+        .delete()
+    }
+
+    for (const a of data.adds) {
+      if (a.teamId !== match.homeTeamId && a.teamId !== match.awayTeamId) continue
+      if (a.playerId) {
+        const player = await Player.query()
+          .where('id', a.playerId)
+          .where('team_id', a.teamId)
+          .first()
+        if (!player) continue
+      }
+      await MatchEvent.create({
+        matchId: match.id,
+        teamId: a.teamId,
+        playerId: a.playerId ?? null,
+        type: a.type,
+        minute: a.minute ?? null,
+      })
+    }
+
+    // A match with any event counts as played; with none it reverts to scheduled.
+    if (match.status !== 'cancelled') {
+      const count = await MatchEvent.query().where('match_id', match.id).count('* as c').first()
+      const hasEvents = Number(count?.$extras.c ?? 0) > 0
+      const next = hasEvents ? 'played' : 'scheduled'
+      if (match.status !== next) {
+        match.status = next
+        await match.save()
+      }
+    }
+
+    session.flash('success', 'Cédula actualizada')
     return response.redirect().back()
   }
 

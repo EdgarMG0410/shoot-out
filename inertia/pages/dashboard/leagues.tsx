@@ -52,7 +52,7 @@ function LeagueDialog({ locations, onClose }: { locations: LocationOpt[]; onClos
       open
       onClose={onClose}
       title="Nueva liga"
-      description="Crea la liga; luego agrega equipos, calendario y minutas."
+      description="Crea la liga; luego agrega equipos, calendario y cédulas."
     >
       <form onSubmit={submit} className="flex flex-col gap-4">
         <Field label="Locación" error={form.errors.locationId}>

@@ -81,7 +81,7 @@ export function ImageUpload({
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>
-      <div className="flex items-start gap-3">
+      <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start">
         <Photo
           src={value}
           alt="Vista previa"

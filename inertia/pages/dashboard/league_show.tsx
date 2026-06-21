@@ -1,8 +1,26 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Head, Link, router, useForm } from '@inertiajs/react'
-import { ArrowLeft, CalendarRange, MapPin, Pencil, Plus, Trash2, Trophy } from 'lucide-react'
+import {
+  ArrowLeft,
+  CalendarRange,
+  MapPin,
+  Pencil,
+  Plus,
+  Trash2,
+  Trophy,
+} from 'lucide-react'
 import DashboardLayout from '~/layouts/dashboard'
-import { Button, Card, Dialog, EmptyState, Field, Input, Select, Textarea } from '~/components/ui'
+import {
+  Accordion,
+  Button,
+  Card,
+  Dialog,
+  EmptyState,
+  Field,
+  Input,
+  Select,
+  Textarea,
+} from '~/components/ui'
 import { ImageUpload } from '~/components/image-upload'
 import { cn } from '~/lib/utils'
 import { formatDate, timeRange } from '~/lib/format'
@@ -27,6 +45,8 @@ type Match = {
   startTime: string
   endTime: string
   status: MatchStatus
+  round: number | null
+  cedulaImageUrl: string | null
   homeTeamId: number
   homeTeam: string
   awayTeamId: number
@@ -313,12 +333,14 @@ function MatchDialog({
   teams,
   spaces,
   match,
+  nextRound,
   onClose,
 }: {
   leagueId: number
   teams: Team[]
   spaces: SpaceOpt[]
   match: Match | 'new'
+  nextRound: number
   onClose: () => void
 }) {
   const isEdit = match !== 'new'
@@ -330,6 +352,7 @@ function MatchDialog({
     startTime: isEdit ? match.startTime : '',
     endTime: isEdit ? match.endTime : '',
     status: isEdit ? match.status : 'scheduled',
+    round: String(isEdit ? (match.round ?? '') : nextRound),
   })
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -340,6 +363,7 @@ function MatchDialog({
       date: d.date,
       startTime: d.startTime,
       endTime: d.endTime,
+      round: d.round ? Number(d.round) : null,
       ...(isEdit ? { status: d.status } : {}),
     }))
     const opts = { onSuccess: onClose, preserveScroll: true }
@@ -390,14 +414,24 @@ function MatchDialog({
             ))}
           </Select>
         </Field>
-        <Field label="Fecha" error={form.errors.date}>
-          <Input
-            type="date"
-            value={form.data.date}
-            onChange={(e) => form.setData('date', e.target.value)}
-            required
-          />
-        </Field>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Fecha" error={form.errors.date}>
+            <Input
+              type="date"
+              value={form.data.date}
+              onChange={(e) => form.setData('date', e.target.value)}
+              required
+            />
+          </Field>
+          <Field label="Jornada" error={form.errors.round} hint="Opcional">
+            <Input
+              type="number"
+              min={1}
+              value={form.data.round}
+              onChange={(e) => form.setData('round', e.target.value)}
+            />
+          </Field>
+        </div>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Inicio" error={form.errors.startTime}>
             <Input
@@ -596,6 +630,15 @@ const EVENT_CLS: Record<EventType, string> = {
   red: 'bg-rose-mark/15 text-rose-mark',
 }
 
+/** Small count badge that sits on the corner of an action icon. */
+function Tally({ n }: { n: number }) {
+  return (
+    <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-graphite px-1 text-[10px] font-bold leading-none tabular-nums text-chalk ring-2 ring-bone-2">
+      {n}
+    </span>
+  )
+}
+
 function MinutaDialog({
   match,
   teams,
@@ -606,79 +649,166 @@ function MinutaDialog({
   onClose: () => void
 }) {
   const teamById = useMemo(() => new Map(teams.map((t) => [t.id, t])), [teams])
-  const form = useForm({
-    teamId: String(match.homeTeamId),
-    playerId: '',
-    type: 'goal' as EventType,
-    minute: '',
-  })
-  const roster = teamById.get(Number(form.data.teamId))?.players ?? []
+  const playerNameById = useMemo(() => {
+    const m = new Map<number, string>()
+    for (const t of teams) for (const p of t.players) m.set(p.id, p.name)
+    return m
+  }, [teams])
 
-  const add = (e: React.FormEvent) => {
-    e.preventDefault()
-    form.transform((d) => ({
-      teamId: Number(d.teamId),
-      playerId: d.playerId ? Number(d.playerId) : null,
-      type: d.type,
-      minute: d.minute ? Number(d.minute) : null,
-    }))
-    form.post(`/dashboard/matches/${match.id}/events`, {
-      preserveScroll: true,
-      onSuccess: () => form.reset('playerId', 'minute'),
-    })
+  // Cambios en cola en el navegador hasta tocar "Actualizar".
+  type Pending = { tempId: number; teamId: number; playerId: number | null; type: EventType }
+  type Row = {
+    id: number
+    teamId: number
+    playerId: number | null
+    playerName: string | null
+    type: EventType
+    minute: number | null
+    pending: boolean
   }
-  const removeEvent = (id: number) =>
-    router.delete(`/dashboard/match-events/${id}`, { preserveScroll: true })
-  const quickGoal = (teamId: number) =>
+  const [adds, setAdds] = useState<Pending[]>([])
+  const [removes, setRemoves] = useState<number[]>([])
+  const [saving, setSaving] = useState(false)
+  const tempId = useRef(-1)
+  const dirty = adds.length > 0 || removes.length > 0
+
+  // Eventos efectivos = guardados (menos los borrados) + los encolados.
+  const events = useMemo<Row[]>(() => {
+    const base = match.events
+      .filter((e) => !removes.includes(e.id))
+      .map((e) => ({ ...e, pending: false }))
+    const queued = adds.map((a) => ({
+      id: a.tempId,
+      teamId: a.teamId,
+      playerId: a.playerId,
+      playerName: a.playerId != null ? (playerNameById.get(a.playerId) ?? null) : null,
+      type: a.type,
+      minute: null,
+      pending: true,
+    }))
+    return [...base, ...queued]
+  }, [match.events, removes, adds, playerNameById])
+
+  const goalsOf = (teamId: number) =>
+    events.filter((e) => e.type === 'goal' && e.teamId === teamId).length
+  const homeGoals = goalsOf(match.homeTeamId)
+  const awayGoals = goalsOf(match.awayTeamId)
+  const countFor = (playerId: number, type: EventType) =>
+    events.filter((e) => e.type === type && e.playerId === playerId).length
+
+  const addEvent = (teamId: number, playerId: number | null, type: EventType) =>
+    setAdds((prev) => [...prev, { tempId: tempId.current--, teamId, playerId, type }])
+  const removeRow = (row: Row) => {
+    if (row.pending) setAdds((prev) => prev.filter((a) => a.tempId !== row.id))
+    else setRemoves((prev) => (prev.includes(row.id) ? prev : [...prev, row.id]))
+  }
+  // Quita el último gol del equipo — prioriza los sin jugador asignado.
+  const removeLastGoal = (teamId: number) => {
+    const goals = events.filter((e) => e.type === 'goal' && e.teamId === teamId)
+    const target = [...goals].reverse().find((e) => e.playerId == null) ?? goals[goals.length - 1]
+    if (target) removeRow(target)
+  }
+
+  const save = () => {
+    if (!dirty || saving) return
+    setSaving(true)
     router.post(
-      `/dashboard/matches/${match.id}/events`,
-      { teamId, playerId: null, type: 'goal', minute: null },
-      { preserveScroll: true }
+      `/dashboard/matches/${match.id}/cedula`,
+      {
+        adds: adds.map(({ teamId, playerId, type }) => ({ teamId, playerId, type, minute: null })),
+        removes,
+      },
+      {
+        preserveScroll: true,
+        preserveState: true,
+        only: ['matches', 'standings', 'scorers', 'cards'],
+        onSuccess: () => {
+          setAdds([])
+          setRemoves([])
+        },
+        onFinish: () => setSaving(false),
+      }
     )
+  }
+  const handleClose = () => {
+    if (dirty && !confirm('Tienes cambios sin guardar. ¿Descartarlos?')) return
+    onClose()
+  }
+
+  // Marcador: toque = +1, mantener = −1 (sin jugador).
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const longPressed = useRef(false)
+  const startPress = (teamId: number) => {
+    longPressed.current = false
+    pressTimer.current = setTimeout(() => {
+      longPressed.current = true
+      removeLastGoal(teamId)
+    }, 500)
+  }
+  const endPress = () => {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current)
+      pressTimer.current = null
+    }
+  }
+  const tapScore = (teamId: number) => {
+    if (longPressed.current) {
+      longPressed.current = false
+      return
+    }
+    addEvent(teamId, null, 'goal')
+  }
 
   return (
     <Dialog
       open
-      onClose={onClose}
-      title={`Minuta · ${match.homeTeam} ${match.homeGoals}–${match.awayGoals} ${match.awayTeam}`}
+      onClose={handleClose}
+      title={`Cédula · ${match.homeTeam} ${homeGoals}–${awayGoals} ${match.awayTeam}`}
       description={`${formatDate(match.date)} · ${timeRange(match.startTime, match.endTime)} · ${match.spaceName}`}
     >
       <div className="flex flex-col gap-4">
-        {/* Marcador + gol rápido */}
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-2xl bg-bone-1 p-4">
-          <div className="text-right">
-            <p className="truncate text-sm font-semibold text-graphite">{match.homeTeam}</p>
-            <button
-              type="button"
-              onClick={() => quickGoal(match.homeTeamId)}
-              className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-lime-mark px-3 py-1 text-xs font-bold text-graphite transition-colors hover:bg-lime-deep"
-            >
-              <Plus className="size-3.5" /> Gol
-            </button>
-          </div>
-          <span className="rounded-xl bg-graphite px-4 py-2 text-2xl font-bold tabular-nums text-chalk">
-            {match.homeGoals}–{match.awayGoals}
-          </span>
-          <div>
-            <p className="truncate text-sm font-semibold text-graphite">{match.awayTeam}</p>
-            <button
-              type="button"
-              onClick={() => quickGoal(match.awayTeamId)}
-              className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-lime-mark px-3 py-1 text-xs font-bold text-graphite transition-colors hover:bg-lime-deep"
-            >
-              <Plus className="size-3.5" /> Gol
-            </button>
-          </div>
+        {/* Marcador — toca un lado para sumar un gol sin jugador asignado */}
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+          {[
+            { id: match.homeTeamId, name: match.homeTeam, goals: homeGoals },
+            { id: match.awayTeamId, name: match.awayTeam, goals: awayGoals },
+          ].map((team, i) => (
+            <div key={team.id} className="contents">
+              {i === 1 && (
+                <span className="px-1 font-mono text-xs font-bold uppercase text-slate-6">vs</span>
+              )}
+              <button
+                type="button"
+                onClick={() => tapScore(team.id)}
+                onPointerDown={() => startPress(team.id)}
+                onPointerUp={endPress}
+                onPointerLeave={endPress}
+                onContextMenu={(e) => e.preventDefault()}
+                aria-label={`Gol de ${team.name} (mantén para restar)`}
+                className="flex select-none flex-col items-center gap-0.5 rounded-2xl bg-bone-1 px-2 py-3 transition-colors hover:bg-lime-mark/40 active:bg-lime-mark/70"
+              >
+                <span className="line-clamp-2 text-center text-[11px] font-semibold uppercase leading-tight tracking-wide text-slate-6">
+                  {team.name}
+                </span>
+                <span className="font-display text-4xl font-bold tabular-nums text-graphite">
+                  {team.goals}
+                </span>
+              </button>
+            </div>
+          ))}
         </div>
 
         <ul className="flex max-h-52 flex-col gap-1.5 overflow-y-auto">
-          {match.events.length === 0 ? (
+          {events.length === 0 ? (
             <li className="text-sm text-slate-6">Sin eventos registrados.</li>
           ) : (
-            match.events.map((ev) => (
+            events.map((ev) => (
               <li
                 key={ev.id}
-                className="flex items-center gap-2 rounded-lg bg-bone-2 px-2.5 py-1.5 text-sm"
+                className={cn(
+                  'flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm',
+                  ev.pending ? 'bg-lime-mark/20 ring-1 ring-lime-deep/30' : 'bg-bone-2'
+                )}
               >
                 <span className="w-8 shrink-0 text-center tabular-nums text-slate-6">
                   {ev.minute != null ? `${ev.minute}'` : '—'}
@@ -700,7 +830,7 @@ function MinutaDialog({
                 </span>
                 <button
                   type="button"
-                  onClick={() => removeEvent(ev.id)}
+                  onClick={() => removeRow(ev)}
                   aria-label="Quitar"
                   className="text-slate-6 hover:text-rose-mark"
                 >
@@ -711,59 +841,115 @@ function MinutaDialog({
           )}
         </ul>
 
-        <form onSubmit={add} className="flex flex-col gap-3 border-t border-bone-3 pt-4">
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Equipo" error={form.errors.teamId}>
-              <Select
-                value={form.data.teamId}
-                onChange={(e) =>
-                  form.setData({ ...form.data, teamId: e.target.value, playerId: '' })
+        {/* Roster (acordeón por equipo): un clic anota gol; el menú (⋮) registra tarjetas */}
+        <div className="flex flex-col gap-2 border-t border-bone-3 pt-4">
+          {[
+            { id: match.homeTeamId, name: match.homeTeam, goals: homeGoals },
+            { id: match.awayTeamId, name: match.awayTeam, goals: awayGoals },
+          ].map((team, i) => {
+            const roster = teamById.get(team.id)?.players ?? []
+            return (
+              <Accordion
+                key={team.id}
+                defaultOpen={i === 0}
+                title={<span className="truncate">{team.name}</span>}
+                right={
+                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-graphite px-1.5 text-xs font-bold tabular-nums text-chalk">
+                    {team.goals}
+                  </span>
                 }
               >
-                <option value={match.homeTeamId}>{match.homeTeam}</option>
-                <option value={match.awayTeamId}>{match.awayTeam}</option>
-              </Select>
-            </Field>
-            <Field label="Tipo" error={form.errors.type}>
-              <Select
-                value={form.data.type}
-                onChange={(e) => form.setData('type', e.target.value as EventType)}
-              >
-                <option value="goal">Gol</option>
-                <option value="yellow">Amarilla</option>
-                <option value="red">Roja</option>
-              </Select>
-            </Field>
-          </div>
-          <div className="grid grid-cols-[1fr_5rem] gap-3">
-            <Field label="Jugador" error={form.errors.playerId}>
-              <Select
-                value={form.data.playerId}
-                onChange={(e) => form.setData('playerId', e.target.value)}
-              >
-                <option value="">Sin asignar</option>
-                {roster.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.number != null ? `${p.number} · ` : ''}
-                    {p.name}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="Min" error={form.errors.minute}>
-              <Input
-                type="number"
-                min="0"
-                value={form.data.minute}
-                onChange={(e) => form.setData('minute', e.target.value)}
-                placeholder="45"
-              />
-            </Field>
-          </div>
-          <Button type="submit" variant="lime" disabled={form.processing}>
-            <Plus className="size-4" /> Agregar a la minuta
+                {roster.length === 0 ? (
+                  <p className="text-xs text-slate-6">Sin jugadores en el roster.</p>
+                ) : (
+                  <ul className="flex flex-col gap-1">
+                    {roster.map((p) => {
+                      const goals = countFor(p.id, 'goal')
+                      const yellows = countFor(p.id, 'yellow')
+                      const reds = countFor(p.id, 'red')
+                      return (
+                        <li
+                          key={p.id}
+                          className="flex items-center gap-2 rounded-lg bg-bone-2 px-2.5 py-1.5"
+                        >
+                          {p.number != null && (
+                            <span className="w-6 shrink-0 text-center text-xs font-bold tabular-nums text-slate-6">
+                              {p.number}
+                            </span>
+                          )}
+                          <span className="flex-1 truncate text-sm text-graphite">{p.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => addEvent(team.id, p.id, 'goal')}
+                            aria-label={`Gol de ${p.name}`}
+                            title="Gol"
+                            className="relative flex size-9 shrink-0 items-center justify-center rounded-full text-lg transition-colors hover:bg-lime-mark"
+                          >
+                            ⚽
+                            {goals > 0 && <Tally n={goals} />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => addEvent(team.id, p.id, 'yellow')}
+                            aria-label={`Tarjeta amarilla a ${p.name}`}
+                            title="Amarilla"
+                            className="relative flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-bone-3"
+                          >
+                            <span className="inline-block h-5 w-3.5 rounded-[2px] bg-amber-mark" />
+                            {yellows > 0 && <Tally n={yellows} />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => addEvent(team.id, p.id, 'red')}
+                            aria-label={`Tarjeta roja a ${p.name}`}
+                            title="Roja"
+                            className="relative flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-bone-3"
+                          >
+                            <span className="inline-block h-5 w-3.5 rounded-[2px] bg-rose-mark" />
+                            {reds > 0 && <Tally n={reds} />}
+                          </button>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                )}
+              </Accordion>
+            )
+          })}
+        </div>
+
+        {/* Imagen de la cédula (opcional, solo admin) */}
+        <div className="border-t border-bone-3 pt-4">
+          <Accordion
+            title="Foto de la cédula"
+            defaultOpen={!!match.cedulaImageUrl}
+            right={<span className="text-[11px] font-medium">Opcional</span>}
+          >
+            <ImageUpload
+              value={match.cedulaImageUrl}
+              folder="misc"
+              aspect="video"
+              onChange={(url) =>
+                router.put(
+                  `/dashboard/matches/${match.id}`,
+                  { cedulaImageUrl: url },
+                  { preserveScroll: true, preserveState: true, only: ['matches'] }
+                )
+              }
+            />
+          </Accordion>
+        </div>
+
+        {/* Guardar en lote todos los cambios encolados */}
+        <div className="sticky bottom-0 -mx-6 border-t border-bone-3 bg-chalk/95 px-6 py-3 backdrop-blur">
+          <Button variant="lime" className="w-full" onClick={save} disabled={!dirty || saving}>
+            {saving
+              ? 'Guardando…'
+              : dirty
+                ? `Actualizar (${adds.length + removes.length})`
+                : 'Sin cambios'}
           </Button>
-        </form>
+        </div>
       </div>
     </Dialog>
   )
@@ -788,9 +974,23 @@ export default function LeagueShow({
   const [matchDialog, setMatchDialog] = useState<Match | 'new' | null>(null)
   const [generating, setGenerating] = useState(false)
   const [minuta, setMinuta] = useState<Match | null>(null)
+  const [jornada, setJornada] = useState<string>('all')
 
   const enoughTeams = teams.length >= 2
   const hasPlayed = standings.some((s) => s.played > 0)
+
+  // Distinct jornadas present, plus a bucket for matches without one.
+  const rounds = useMemo(
+    () => [...new Set(matches.map((m) => m.round).filter((r): r is number => r != null))].sort((a, b) => a - b),
+    [matches]
+  )
+  const hasNoRound = matches.some((m) => m.round == null)
+  const nextRound = rounds.length ? rounds[rounds.length - 1] + 1 : 1
+  const visibleMatches = useMemo(() => {
+    if (jornada === 'all') return matches
+    if (jornada === 'none') return matches.filter((m) => m.round == null)
+    return matches.filter((m) => m.round === Number(jornada))
+  }, [matches, jornada])
 
   const removeMatch = (m: Match) => {
     if (confirm('¿Eliminar este partido?'))
@@ -1003,9 +1203,26 @@ export default function LeagueShow({
       {tab === 'calendario' && (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-slate-6">
-              {matches.length} {matches.length === 1 ? 'partido' : 'partidos'}
-            </p>
+            <div className="flex items-center gap-3">
+              {(rounds.length > 0 || hasNoRound) && (
+                <Select
+                  className="w-auto"
+                  value={jornada}
+                  onChange={(e) => setJornada(e.target.value)}
+                >
+                  <option value="all">Todas las jornadas</option>
+                  {rounds.map((r) => (
+                    <option key={r} value={String(r)}>
+                      Jornada {r}
+                    </option>
+                  ))}
+                  {hasNoRound && <option value="none">Sin jornada</option>}
+                </Select>
+              )}
+              <p className="text-sm text-slate-6">
+                {visibleMatches.length} {visibleMatches.length === 1 ? 'partido' : 'partidos'}
+              </p>
+            </div>
             <div className="flex items-center gap-2">
               <Button
                 variant="secondary"
@@ -1036,12 +1253,15 @@ export default function LeagueShow({
 
           {matches.length === 0 ? (
             <EmptyState title="Sin partidos" hint="Programa el primer partido del calendario." />
+          ) : visibleMatches.length === 0 ? (
+            <EmptyState title="Sin partidos" hint="No hay partidos en esta jornada." />
           ) : (
             <div className="space-y-4">
-              {matches.map((m) => (
+              {visibleMatches.map((m) => (
                 <Card key={m.id} className="p-5">
                   <div className="flex items-center justify-between gap-3">
                     <p className="font-mono text-xs font-medium uppercase tracking-wide text-slate-6">
+                      {m.round != null && `J${m.round} · `}
                       {formatDate(m.date)} · {m.startTime}
                     </p>
                     <span
@@ -1101,7 +1321,7 @@ export default function LeagueShow({
                     <MapPin className="size-4 shrink-0" />
                     <span className="flex-1 truncate">{m.spaceName}</span>
                     <Button variant="secondary" size="sm" onClick={() => setMinuta(m)}>
-                      Minuta
+                      Cédula
                     </Button>
                     <Button
                       variant="ghost"
@@ -1166,6 +1386,7 @@ export default function LeagueShow({
           teams={teams}
           spaces={spaces}
           match={matchDialog}
+          nextRound={nextRound}
           onClose={() => setMatchDialog(null)}
         />
       )}

@@ -122,6 +122,7 @@ export default class FixtureService {
                 startTime: toTime(start),
                 endTime: toTime(start + opts.matchDuration),
                 status: 'scheduled',
+                round: r + 1,
               })
               created++
               placed = true

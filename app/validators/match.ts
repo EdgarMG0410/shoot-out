@@ -13,6 +13,7 @@ export const createMatchValidator = vine.compile(
     date: vine.string().trim().regex(DATE_RE),
     startTime: vine.string().trim().regex(TIME_RE),
     endTime: vine.string().trim().regex(TIME_RE),
+    round: vine.number().positive().nullable().optional(),
   })
 )
 
@@ -25,6 +26,8 @@ export const updateMatchValidator = vine.compile(
     startTime: vine.string().trim().regex(TIME_RE).optional(),
     endTime: vine.string().trim().regex(TIME_RE).optional(),
     status: vine.enum(STATUS).optional(),
+    round: vine.number().positive().nullable().optional(),
+    cedulaImageUrl: vine.string().trim().maxLength(1024).nullable().optional(),
   })
 )
 
@@ -34,6 +37,20 @@ export const createMatchEventValidator = vine.compile(
     playerId: vine.number().positive().nullable().optional(),
     type: vine.enum(EVENT_TYPE),
     minute: vine.number().min(0).max(200).nullable().optional(),
+  })
+)
+
+export const saveCedulaValidator = vine.compile(
+  vine.object({
+    adds: vine.array(
+      vine.object({
+        teamId: vine.number().positive(),
+        playerId: vine.number().positive().nullable().optional(),
+        type: vine.enum(EVENT_TYPE),
+        minute: vine.number().min(0).max(200).nullable().optional(),
+      })
+    ),
+    removes: vine.array(vine.number().positive()),
   })
 )
 

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Head, Link } from '@inertiajs/react'
 import { ArrowLeft, MapPin, Trophy } from 'lucide-react'
 import PublicLayout from '~/layouts/public'
-import { Card, EmptyState } from '~/components/ui'
+import { Card, EmptyState, Select } from '~/components/ui'
 import { cn } from '~/lib/utils'
 import { formatDate, timeRange } from '~/lib/format'
 
@@ -14,6 +14,7 @@ type Match = {
   startTime: string
   endTime: string
   status: MatchStatus
+  round: number | null
   homeTeam: string
   awayTeam: string
   homeGoals: number
@@ -65,10 +66,32 @@ export default function PublicLeague({
   cards: CardRow[]
 }) {
   const [tab, setTab] = useState<Tab>('tabla')
+  const [jornada, setJornada] = useState<string>('')
   const hasPlayed = standings.some((s) => s.played > 0)
 
-  // Group fixtures into jornadas by match date (chronological).
+  // Group fixtures into jornadas. Prefer the explicit round column; fall back to
+  // grouping by match date for legacy leagues that have no round set.
   const jornadas = useMemo(() => {
+    const hasRounds = matches.some((m) => m.round != null)
+    if (hasRounds) {
+      const byRound = new Map<number, Match[]>()
+      const noRound: Match[] = []
+      for (const m of matches) {
+        if (m.round == null) {
+          noRound.push(m)
+        } else {
+          const arr = byRound.get(m.round) ?? []
+          arr.push(m)
+          byRound.set(m.round, arr)
+        }
+      }
+      const list = [...byRound.entries()]
+        .sort((a, b) => a[0] - b[0])
+        .map(([n, ms]) => ({ key: String(n), label: `Jornada ${n}`, date: ms[0]?.date ?? '', matches: ms }))
+      if (noRound.length)
+        list.push({ key: 'none', label: 'Sin jornada', date: noRound[0]?.date ?? '', matches: noRound })
+      return list
+    }
     const byDate = new Map<string, Match[]>()
     for (const m of matches) {
       const arr = byDate.get(m.date) ?? []
@@ -77,8 +100,10 @@ export default function PublicLeague({
     }
     return [...byDate.entries()]
       .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([date, ms], i) => ({ n: i + 1, date, matches: ms }))
+      .map(([date, ms], i) => ({ key: String(i + 1), label: `Jornada ${i + 1}`, date, matches: ms }))
   }, [matches])
+
+  const current = jornadas.find((j) => j.key === jornada) ?? jornadas[0]
 
   return (
     <>
@@ -250,19 +275,28 @@ export default function PublicLeague({
 
       {tab === 'jornadas' && (
         <div className="space-y-8">
-          {matches.length === 0 ? (
+          {matches.length === 0 || !current ? (
             <EmptyState title="Sin partidos" hint="El calendario aún no está disponible." />
           ) : (
-            jornadas.map((j) => (
-              <section key={j.n}>
-                <div className="mb-3 flex items-baseline gap-3">
-                  <h2 className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-slate-6">
-                    Jornada {j.n}
-                  </h2>
-                  <span className="text-sm text-slate-6">{formatDate(j.date)}</span>
-                </div>
-                <div className="space-y-3">
-                  {j.matches.map((m) => (
+            <section>
+              <div className="mb-4 flex flex-wrap items-center gap-3">
+                <Select
+                  className="w-auto"
+                  value={current.key}
+                  onChange={(e) => setJornada(e.target.value)}
+                >
+                  {jornadas.map((j) => (
+                    <option key={j.key} value={j.key}>
+                      {j.label}
+                    </option>
+                  ))}
+                </Select>
+                {current.date && (
+                  <span className="text-sm text-slate-6">{formatDate(current.date)}</span>
+                )}
+              </div>
+              <div className="space-y-3">
+                {current.matches.map((m) => (
                     <Card key={m.id} className="p-5">
                       <div className="flex items-center justify-between gap-3">
                         <p className="font-mono text-xs font-medium uppercase tracking-wide text-slate-6">
@@ -332,7 +366,6 @@ export default function PublicLeague({
                   ))}
                 </div>
               </section>
-            ))
           )}
         </div>
       )}

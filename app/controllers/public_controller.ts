@@ -152,6 +152,7 @@ export default class PublicController {
           startTime: m.startTime,
           endTime: m.endTime,
           status: m.status,
+          round: m.round,
           homeTeam: m.homeTeam?.name ?? '—',
           awayTeam: m.awayTeam?.name ?? '—',
           homeGoals,

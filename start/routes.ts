@@ -262,6 +262,9 @@ router
       .post('/dashboard/matches/:id/events', [DashboardMatchesController, 'addEvent'])
       .as('dashboard.matches.events.store')
     router
+      .post('/dashboard/matches/:id/cedula', [DashboardMatchesController, 'saveCedula'])
+      .as('dashboard.matches.cedula')
+    router
       .delete('/dashboard/match-events/:eventId', [DashboardMatchesController, 'removeEvent'])
       .as('dashboard.matchevents.destroy')
   })

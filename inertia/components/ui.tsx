@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { usePage } from '@inertiajs/react'
 import { sileo, Toaster } from 'sileo'
-import { ImageOff, X } from 'lucide-react'
+import { ChevronDown, ImageOff, X } from 'lucide-react'
 import { cn } from '~/lib/utils'
 
 /* ----------------------------- FlashToasts ------------------------------ */
@@ -226,10 +226,14 @@ export function Dialog({
   if (!open) return null
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
-      <div className="absolute inset-0 bg-graphite/50 backdrop-blur-md" onClick={onClose} />
-      <div className="relative w-full max-w-lg rounded-3xl border border-bone-3 bg-chalk p-6 shadow-[0_24px_60px_-15px_oklch(20%_0.01_250/0.35)]">
-        <div className="mb-5 flex items-start justify-between gap-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
+      <div className="scrim-in absolute inset-0 bg-graphite/50 backdrop-blur-md" onClick={onClose} />
+      <div className="drawer-up relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl border border-bone-3 bg-chalk shadow-[0_24px_60px_-15px_oklch(20%_0.01_250/0.35)] sm:max-h-[85vh] sm:max-w-lg sm:rounded-3xl">
+        {/* Grab handle (mobile drawer affordance) */}
+        <div className="flex shrink-0 justify-center pt-2.5 sm:hidden">
+          <span className="h-1.5 w-10 rounded-full bg-bone-3" />
+        </div>
+        <div className="flex shrink-0 items-start justify-between gap-4 px-6 pb-4 pt-4 sm:pt-6">
           <div>
             <h2 className="text-lg font-semibold text-graphite">{title}</h2>
             {description && <p className="mt-0.5 text-sm text-slate-6">{description}</p>}
@@ -238,10 +242,51 @@ export function Dialog({
             <X />
           </Button>
         </div>
-        {children}
+        <div className="overflow-y-auto px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pb-6">
+          {children}
+        </div>
       </div>
     </div>,
     document.body
+  )
+}
+
+/* ------------------------------ Accordion ------------------------------ */
+
+export function Accordion({
+  title,
+  right,
+  defaultOpen = false,
+  children,
+}: {
+  title: ReactNode
+  /** Optional trailing content shown next to the chevron (e.g. a count badge). */
+  right?: ReactNode
+  defaultOpen?: boolean
+  children: ReactNode
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div className="rounded-xl border border-bone-3">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open ? 'true' : 'false'}
+        className={cn(
+          'flex w-full items-center justify-between gap-2 bg-bone-1 px-3.5 py-3 text-left transition-colors hover:bg-bone-2',
+          open ? 'rounded-t-xl' : 'rounded-xl'
+        )}
+      >
+        <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-graphite">
+          {title}
+        </span>
+        <span className="flex shrink-0 items-center gap-2 text-slate-6">
+          {right}
+          <ChevronDown className={cn('size-4 transition-transform', open && 'rotate-180')} />
+        </span>
+      </button>
+      {open && <div className="border-t border-bone-3 p-3">{children}</div>}
+    </div>
   )
 }
 
