@@ -440,9 +440,16 @@ function TeamCard({ team, onEdit }: { team: Team; onEdit: () => void }) {
         )}
       </ul>
 
-      <Button variant="secondary" size="sm" className="mt-4 w-full" onClick={() => setDialog('new')}>
-        <Plus className="size-4" /> Agregar jugador
-      </Button>
+      <div className="mt-auto pt-4">
+        <Button
+          variant="secondary"
+          size="sm"
+          className="w-full"
+          onClick={() => setDialog('new')}
+        >
+          <Plus className="size-4" /> Agregar jugador
+        </Button>
+      </div>
 
       {dialog && (
         <PlayerDialog

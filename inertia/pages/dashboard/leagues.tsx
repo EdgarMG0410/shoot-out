@@ -187,7 +187,7 @@ export default function Leagues({
                 </Button>
               </div>
 
-              <div className="mt-3 flex items-center gap-4 text-sm text-slate-6">
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-6">
                 <span className="inline-flex items-center gap-1">
                   <Users className="size-3.5" /> {l.teamsCount} equipos
                 </span>
@@ -196,12 +196,14 @@ export default function Leagues({
                 </span>
               </div>
 
-              <Link
-                href={`/dashboard/leagues/${l.id}`}
-                className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl border border-bone-3 bg-bone-1 px-4 py-2 text-sm font-medium text-graphite transition-colors hover:bg-bone-2"
-              >
-                Gestionar liga <ArrowRight className="size-4" />
-              </Link>
+              <div className="mt-auto pt-4">
+                <Link
+                  href={`/dashboard/leagues/${l.id}`}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-bone-3 bg-bone-1 px-4 py-2.5 text-sm font-medium text-graphite transition-colors hover:bg-bone-2"
+                >
+                  Gestionar liga <ArrowRight className="size-4" />
+                </Link>
+              </div>
             </Card>
           ))}
         </div>
