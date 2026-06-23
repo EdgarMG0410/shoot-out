@@ -3,7 +3,6 @@ import { Head, Link, router, useForm } from '@inertiajs/react'
 import {
   ArrowLeft,
   CalendarRange,
-  Fingerprint,
   MapPin,
   Pencil,
   Plus,
@@ -240,47 +239,6 @@ function TeamDialog({
   )
 }
 
-const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/
-const VOWELS = 'AEIOU'
-const COMPOUND = new Set(['JOSE', 'MARIA', 'MA', 'J'])
-
-/** Strip accents, uppercase, keep letters and spaces. Mirror of the server. */
-function cleanName(s: string): string {
-  return s
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toUpperCase()
-    .replace(/[^A-Z ]/g, '')
-    .trim()
-}
-
-/**
- * Client preview of the 10-char mini-CURP base (server appends a 3-char
- * homoclave on save). Purely informational so the user sees an ID forming.
- */
-function miniCurpPreview(
-  paterno: string,
-  materno: string,
-  nombre: string,
-  birthdate: string
-): string | null {
-  if (!paterno || !nombre || !DATE_ONLY.test(birthdate)) return null
-  const p = cleanName(paterno)
-  const m = cleanName(materno) || 'X'
-  const nParts = cleanName(nombre).split(/\s+/).filter(Boolean)
-  const n = nParts.length > 1 && COMPOUND.has(nParts[0]) ? nParts[1] : nParts[0]
-  if (!p || !n) return null
-  let innerVowel = 'X'
-  for (let i = 1; i < p.length; i++) {
-    if (VOWELS.includes(p[i])) {
-      innerVowel = p[i]
-      break
-    }
-  }
-  const [y, mo, d] = birthdate.split('-')
-  return p[0] + innerVowel + m[0] + n[0] + y.slice(2) + mo + d
-}
-
 function PlayerDialog({
   teamId,
   player,
@@ -300,22 +258,6 @@ function PlayerDialog({
     phone: player?.phone ?? '',
     number: player?.number != null ? String(player.number) : '',
   })
-
-  const previewKey = useMemo(
-    () =>
-      miniCurpPreview(
-        form.data.paternalSurname,
-        form.data.maternalSurname,
-        form.data.firstName,
-        form.data.birthdate
-      ),
-    [
-      form.data.paternalSurname,
-      form.data.maternalSurname,
-      form.data.firstName,
-      form.data.birthdate,
-    ]
-  )
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -412,30 +354,6 @@ function PlayerDialog({
           </Field>
         </div>
 
-        {(() => {
-          // On edit show the real stored key (unless it's a backfill placeholder
-          // and a birthdate is now set — then preview the about-to-be-minted one).
-          const placeholder = player?.playerKey && player.playerKey.slice(4, 10) === '000000'
-          const showStored = isEdit && player?.playerKey && !(placeholder && previewKey)
-          const value = showStored ? player!.playerKey : previewKey
-          if (!value) return null
-          return (
-            <div className="flex items-center gap-2 rounded-xl bg-bone-2 px-3.5 py-2.5 text-xs text-slate-6">
-              <Fingerprint className="size-4 shrink-0 text-lime-deep" />
-              <span>
-                ID del jugador:{' '}
-                <span className="font-mono font-semibold text-graphite">{value}</span>
-                {!showStored && (
-                  <>
-                    <span className="text-slate-6/60">···</span>{' '}
-                    <span className="text-slate-6/80">(se confirma al guardar)</span>
-                  </>
-                )}
-              </span>
-            </div>
-          )
-        })()}
-
         <div className="mt-1 flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancelar
@@ -497,14 +415,7 @@ function TeamCard({ team, onEdit }: { team: Team; onEdit: () => void }) {
                 alt={p.name}
                 className="size-9 shrink-0 rounded-md border border-bone-3"
               />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-graphite">{p.name}</p>
-                {p.playerKey && (
-                  <p className="truncate font-mono text-[10px] uppercase tracking-wide text-slate-6">
-                    {p.playerKey}
-                  </p>
-                )}
-              </div>
+              <span className="min-w-0 flex-1 truncate text-graphite">{p.name}</span>
               <span className="grid size-6 shrink-0 place-items-center rounded-md bg-chalk text-xs font-semibold tabular-nums text-slate-6">
                 {p.number ?? '–'}
               </span>
