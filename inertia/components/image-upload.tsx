@@ -14,8 +14,8 @@ type Props = {
   value: string | null
   /** Called with the new public URL after upload, or null when cleared. */
   onChange: (url: string | null) => void
-  /** Storage folder namespace: 'spaces' | 'locations' | 'teams' | 'misc'. */
-  folder?: 'spaces' | 'locations' | 'teams' | 'misc'
+  /** Storage folder namespace: 'spaces' | 'locations' | 'teams' | 'players' | 'misc'. */
+  folder?: 'spaces' | 'locations' | 'teams' | 'players' | 'misc'
   /** Preview aspect — square for logos, video (16:9) for cover photos. */
   aspect?: 'square' | 'video'
   className?: string

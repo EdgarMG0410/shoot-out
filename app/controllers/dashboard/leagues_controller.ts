@@ -88,7 +88,18 @@ export default class DashboardLeaguesController {
         id: t.id,
         name: t.name,
         logoUrl: t.logoUrl,
-        players: t.players.map((p) => ({ id: p.id, name: p.name, number: p.number })),
+        players: t.players.map((p) => ({
+          id: p.id,
+          name: p.name,
+          number: p.number,
+          firstName: p.firstName,
+          paternalSurname: p.paternalSurname,
+          maternalSurname: p.maternalSurname,
+          birthdate: p.birthdate ? p.birthdate.toISODate() : null,
+          photoUrl: p.photoUrl,
+          phone: p.phone,
+          playerKey: p.playerKey,
+        })),
       })),
       matches: matches.map((m) => {
         const homeGoals = m.events.filter((e) => e.type === 'goal' && e.teamId === m.homeTeamId).length

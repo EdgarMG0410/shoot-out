@@ -3,6 +3,7 @@ import { Head, Link, router, useForm } from '@inertiajs/react'
 import {
   ArrowLeft,
   CalendarRange,
+  Fingerprint,
   MapPin,
   Pencil,
   Plus,
@@ -18,6 +19,7 @@ import {
   EmptyState,
   Field,
   Input,
+  Photo,
   Select,
   Textarea,
 } from '~/components/ui'
@@ -25,7 +27,18 @@ import { ImageUpload } from '~/components/image-upload'
 import { cn } from '~/lib/utils'
 import { formatDate, timeRange } from '~/lib/format'
 
-type Player = { id: number; name: string; number: number | null }
+type Player = {
+  id: number
+  name: string
+  number: number | null
+  firstName: string | null
+  paternalSurname: string | null
+  maternalSurname: string | null
+  birthdate: string | null
+  photoUrl: string | null
+  phone: string | null
+  playerKey: string | null
+}
 type Team = { id: number; name: string; logoUrl: string | null; players: Player[] }
 type EventType = 'goal' | 'yellow' | 'red'
 type MatchEvent = {
@@ -227,18 +240,222 @@ function TeamDialog({
   )
 }
 
-function TeamCard({ team, onEdit }: { team: Team; onEdit: () => void }) {
-  const form = useForm({ name: '', number: '' })
-  const addPlayer = (e: React.FormEvent) => {
-    e.preventDefault()
-    form.transform((d) => ({ name: d.name, number: d.number ? Number(d.number) : null }))
-    form.post(`/dashboard/teams/${team.id}/players`, {
-      preserveScroll: true,
-      onSuccess: () => form.reset('name', 'number'),
-    })
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/
+const VOWELS = 'AEIOU'
+const COMPOUND = new Set(['JOSE', 'MARIA', 'MA', 'J'])
+
+/** Strip accents, uppercase, keep letters and spaces. Mirror of the server. */
+function cleanName(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toUpperCase()
+    .replace(/[^A-Z ]/g, '')
+    .trim()
+}
+
+/**
+ * Client preview of the 10-char mini-CURP base (server appends a 3-char
+ * homoclave on save). Purely informational so the user sees an ID forming.
+ */
+function miniCurpPreview(
+  paterno: string,
+  materno: string,
+  nombre: string,
+  birthdate: string
+): string | null {
+  if (!paterno || !nombre || !DATE_ONLY.test(birthdate)) return null
+  const p = cleanName(paterno)
+  const m = cleanName(materno) || 'X'
+  const nParts = cleanName(nombre).split(/\s+/).filter(Boolean)
+  const n = nParts.length > 1 && COMPOUND.has(nParts[0]) ? nParts[1] : nParts[0]
+  if (!p || !n) return null
+  let innerVowel = 'X'
+  for (let i = 1; i < p.length; i++) {
+    if (VOWELS.includes(p[i])) {
+      innerVowel = p[i]
+      break
+    }
   }
-  const removePlayer = (id: number) =>
-    router.delete(`/dashboard/players/${id}`, { preserveScroll: true })
+  const [y, mo, d] = birthdate.split('-')
+  return p[0] + innerVowel + m[0] + n[0] + y.slice(2) + mo + d
+}
+
+function PlayerDialog({
+  teamId,
+  player,
+  onClose,
+}: {
+  teamId: number
+  player?: Player
+  onClose: () => void
+}) {
+  const isEdit = !!player
+  const form = useForm({
+    firstName: player?.firstName ?? '',
+    paternalSurname: player?.paternalSurname ?? '',
+    maternalSurname: player?.maternalSurname ?? '',
+    birthdate: player?.birthdate ?? '',
+    photoUrl: player?.photoUrl ?? '',
+    phone: player?.phone ?? '',
+    number: player?.number != null ? String(player.number) : '',
+  })
+
+  const previewKey = useMemo(
+    () =>
+      miniCurpPreview(
+        form.data.paternalSurname,
+        form.data.maternalSurname,
+        form.data.firstName,
+        form.data.birthdate
+      ),
+    [
+      form.data.paternalSurname,
+      form.data.maternalSurname,
+      form.data.firstName,
+      form.data.birthdate,
+    ]
+  )
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault()
+    form.transform((d) => ({
+      firstName: d.firstName,
+      paternalSurname: d.paternalSurname,
+      maternalSurname: d.maternalSurname || null,
+      birthdate: d.birthdate,
+      photoUrl: d.photoUrl,
+      phone: d.phone || null,
+      number: d.number ? Number(d.number) : null,
+    }))
+    const opts = { preserveScroll: true, onSuccess: onClose }
+    if (isEdit) form.put(`/dashboard/players/${player!.id}`, opts)
+    else form.post(`/dashboard/teams/${teamId}/players`, opts)
+  }
+
+  return (
+    <Dialog
+      open
+      onClose={onClose}
+      title={isEdit ? 'Editar jugador' : 'Nuevo jugador'}
+      description="Foto de cara, nombre completo y fecha de nacimiento."
+    >
+      <form onSubmit={submit} className="flex flex-col gap-4">
+        <Field label="Foto de cara" error={form.errors.photoUrl} hint="Rostro visible, de frente">
+          <ImageUpload
+            value={form.data.photoUrl || null}
+            onChange={(url) => form.setData('photoUrl', url ?? '')}
+            folder="players"
+            aspect="square"
+          />
+        </Field>
+
+        <div className="grid grid-cols-[1fr_4.5rem] gap-3">
+          <Field label="Nombre(s)" error={form.errors.firstName}>
+            <Input
+              value={form.data.firstName}
+              onChange={(e) => form.setData('firstName', e.target.value)}
+              placeholder="Juan"
+              required
+            />
+          </Field>
+          <Field label="Número" hint="Opc." error={form.errors.number}>
+            <Input
+              type="number"
+              min="0"
+              value={form.data.number}
+              onChange={(e) => form.setData('number', e.target.value)}
+              placeholder="#"
+            />
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Apellido paterno" error={form.errors.paternalSurname}>
+            <Input
+              value={form.data.paternalSurname}
+              onChange={(e) => form.setData('paternalSurname', e.target.value)}
+              placeholder="Pérez"
+              required
+            />
+          </Field>
+          <Field label="Apellido materno" hint="Opcional" error={form.errors.maternalSurname}>
+            <Input
+              value={form.data.maternalSurname}
+              onChange={(e) => form.setData('maternalSurname', e.target.value)}
+              placeholder="García"
+            />
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Fecha de nacimiento" error={form.errors.birthdate}>
+            <Input
+              type="date"
+              value={form.data.birthdate}
+              onChange={(e) => form.setData('birthdate', e.target.value)}
+              required
+            />
+          </Field>
+          <Field
+            label="Teléfono"
+            hint="Opcional · identificador"
+            error={form.errors.phone}
+          >
+            <Input
+              type="tel"
+              inputMode="numeric"
+              value={form.data.phone}
+              onChange={(e) => form.setData('phone', e.target.value)}
+              placeholder="33 1234 5678"
+            />
+          </Field>
+        </div>
+
+        {(() => {
+          // On edit show the real stored key (unless it's a backfill placeholder
+          // and a birthdate is now set — then preview the about-to-be-minted one).
+          const placeholder = player?.playerKey && player.playerKey.slice(4, 10) === '000000'
+          const showStored = isEdit && player?.playerKey && !(placeholder && previewKey)
+          const value = showStored ? player!.playerKey : previewKey
+          if (!value) return null
+          return (
+            <div className="flex items-center gap-2 rounded-xl bg-bone-2 px-3.5 py-2.5 text-xs text-slate-6">
+              <Fingerprint className="size-4 shrink-0 text-lime-deep" />
+              <span>
+                ID del jugador:{' '}
+                <span className="font-mono font-semibold text-graphite">{value}</span>
+                {!showStored && (
+                  <>
+                    <span className="text-slate-6/60">···</span>{' '}
+                    <span className="text-slate-6/80">(se confirma al guardar)</span>
+                  </>
+                )}
+              </span>
+            </div>
+          )
+        })()}
+
+        <div className="mt-1 flex justify-end gap-2">
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" variant="lime" disabled={form.processing}>
+            {isEdit ? 'Guardar' : 'Agregar'}
+          </Button>
+        </div>
+      </form>
+    </Dialog>
+  )
+}
+
+function TeamCard({ team, onEdit }: { team: Team; onEdit: () => void }) {
+  const [dialog, setDialog] = useState<'new' | Player | null>(null)
+  const removePlayer = (id: number) => {
+    if (confirm('¿Quitar a este jugador del roster?')) {
+      router.delete(`/dashboard/players/${id}`, { preserveScroll: true })
+    }
+  }
   const removeTeam = () => {
     if (confirm(`¿Eliminar "${team.name}"? Se borra su roster.`)) {
       router.delete(`/dashboard/teams/${team.id}`, { preserveScroll: true })
@@ -273,12 +490,32 @@ function TeamCard({ team, onEdit }: { team: Team; onEdit: () => void }) {
           team.players.map((p) => (
             <li
               key={p.id}
-              className="flex items-center gap-2.5 rounded-lg bg-bone-2 px-3 py-2 text-sm"
+              className="flex items-center gap-2.5 rounded-lg bg-bone-2 px-2.5 py-2 text-sm"
             >
+              <Photo
+                src={p.photoUrl}
+                alt={p.name}
+                className="size-9 shrink-0 rounded-md border border-bone-3"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-graphite">{p.name}</p>
+                {p.playerKey && (
+                  <p className="truncate font-mono text-[10px] uppercase tracking-wide text-slate-6">
+                    {p.playerKey}
+                  </p>
+                )}
+              </div>
               <span className="grid size-6 shrink-0 place-items-center rounded-md bg-chalk text-xs font-semibold tabular-nums text-slate-6">
                 {p.number ?? '–'}
               </span>
-              <span className="flex-1 truncate text-graphite">{p.name}</span>
+              <button
+                type="button"
+                onClick={() => setDialog(p)}
+                aria-label="Editar jugador"
+                className="text-slate-6 transition-colors hover:text-graphite"
+              >
+                <Pencil className="size-3.5" />
+              </button>
               <button
                 type="button"
                 onClick={() => removePlayer(p.id)}
@@ -292,36 +529,17 @@ function TeamCard({ team, onEdit }: { team: Team; onEdit: () => void }) {
         )}
       </ul>
 
-      <form onSubmit={addPlayer} className="mt-4 flex items-end gap-2 border-t border-bone-2 pt-4">
-        <div className="w-14">
-          <Input
-            type="number"
-            min="0"
-            value={form.data.number}
-            onChange={(e) => form.setData('number', e.target.value)}
-            placeholder="#"
-            aria-label="Número"
-          />
-        </div>
-        <div className="flex-1">
-          <Input
-            value={form.data.name}
-            onChange={(e) => form.setData('name', e.target.value)}
-            placeholder="Nombre del jugador"
-            required
-            aria-label="Jugador"
-          />
-        </div>
-        <Button
-          type="submit"
-          variant="secondary"
-          size="icon"
-          disabled={form.processing}
-          aria-label="Agregar jugador"
-        >
-          <Plus className="size-4" />
-        </Button>
-      </form>
+      <Button variant="secondary" size="sm" className="mt-4 w-full" onClick={() => setDialog('new')}>
+        <Plus className="size-4" /> Agregar jugador
+      </Button>
+
+      {dialog && (
+        <PlayerDialog
+          teamId={team.id}
+          player={dialog === 'new' ? undefined : dialog}
+          onClose={() => setDialog(null)}
+        />
+      )}
     </Card>
   )
 }

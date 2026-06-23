@@ -41,14 +41,24 @@ export const updateTeamValidator = vine.compile(
 
 export const createPlayerValidator = vine.compile(
   vine.object({
-    name: vine.string().trim().minLength(1).maxLength(120),
+    firstName: vine.string().trim().minLength(1).maxLength(80),
+    paternalSurname: vine.string().trim().minLength(1).maxLength(80),
+    maternalSurname: vine.string().trim().maxLength(80).nullable().optional(),
+    birthdate: vine.string().trim().regex(DATE_RE),
+    photoUrl: vine.string().trim().url(),
+    phone: vine.string().trim().maxLength(32).nullable().optional(),
     number: vine.number().min(0).max(999).nullable().optional(),
   })
 )
 
 export const updatePlayerValidator = vine.compile(
   vine.object({
-    name: vine.string().trim().minLength(1).maxLength(120).optional(),
+    firstName: vine.string().trim().minLength(1).maxLength(80).optional(),
+    paternalSurname: vine.string().trim().minLength(1).maxLength(80).optional(),
+    maternalSurname: vine.string().trim().maxLength(80).nullable().optional(),
+    birthdate: vine.string().trim().regex(DATE_RE).optional(),
+    photoUrl: vine.string().trim().url().optional(),
+    phone: vine.string().trim().maxLength(32).nullable().optional(),
     number: vine.number().min(0).max(999).nullable().optional(),
   })
 )

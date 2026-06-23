@@ -1,7 +1,7 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import StorageService, { StorageError } from '#services/storage_service'
 
-const FOLDERS = ['spaces', 'locations', 'teams', 'misc'] as const
+const FOLDERS = ['spaces', 'locations', 'teams', 'players', 'misc'] as const
 type Folder = (typeof FOLDERS)[number]
 
 /**

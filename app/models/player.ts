@@ -16,6 +16,28 @@ export default class Player extends BaseModel {
   @column()
   declare number: number | null
 
+  @column()
+  declare firstName: string | null
+
+  @column()
+  declare paternalSurname: string | null
+
+  @column()
+  declare maternalSurname: string | null
+
+  @column.date()
+  declare birthdate: DateTime | null
+
+  @column()
+  declare photoUrl: string | null
+
+  @column()
+  declare phone: string | null
+
+  /** Mini-CURP identity key (see #services/player_key). Unique across rosters. */
+  @column()
+  declare playerKey: string | null
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 
